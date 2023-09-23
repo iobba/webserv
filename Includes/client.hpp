@@ -15,6 +15,8 @@ class   Client
 
         Request     _request;
         Response    _response;
+        bool        _first_send;
+        unsigned long int _sending_offset;
 
 
         // setters
