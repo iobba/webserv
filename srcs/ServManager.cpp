@@ -257,8 +257,13 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 int bytesRead = infile.gcount();
                 if (bytesRead > 0) 
                 {
-                    send(clientSocket, buffer.data(), bytesRead, 0);
-                    it->second._sending_offset += bytesRead;
+                    int bytes_sent = send(clientSocket, buffer.data(), bytesRead, 0);
+                    if (bytes_sent < 0)
+                    {
+                        perror("send");
+                        exit (1);
+                    }
+                    it->second._sending_offset += bytes_sent;
                 }
                 std::cout << "number of sent date is : " << it->second._sending_offset << std::endl;
                 if (it->second._sending_offset == get_file_len(it->second._request._response_body_file))
