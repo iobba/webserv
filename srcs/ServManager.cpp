@@ -251,7 +251,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 std::cout << "11111111111111111\n"; 
                 // Read and send the file in chunks
                 infile.seekg(it->second._sending_offset);// move the pointer to a position
-                const int bufferSize = 100000000;
+                const int bufferSize = 1024;
                 std::vector<char> buffer(bufferSize);
                 infile.read(buffer.data(), bufferSize);
                 int bytesRead = infile.gcount();
@@ -264,6 +264,11 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                         exit (1);
                     }
                     it->second._sending_offset += bytes_sent;
+                }
+                else
+                {
+                    perror("read");
+                    exit (1);
                 }
                 std::cout << "number of sent date is : " << it->second._sending_offset << std::endl;
                 if (it->second._sending_offset == get_file_len(it->second._request._response_body_file))
