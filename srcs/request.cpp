@@ -32,14 +32,13 @@ void     Request::request_analysis()
     try
     {
         request_parser();
-        std::cout << "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere\n";
         if (this->_reading_done)
             build_response();
     }
     catch(std::exception & e)
     {
         this->_reading_done = true;
-        _status_code = std::strtoul(e.what(), NULL, 16);
+        _status_code = std::strtoul(e.what(), NULL, 10);
         if (_status_code >= 400)
         {
             this->_response_body_file = this->_request_handler.get_error_page(_status_code);
@@ -465,6 +464,7 @@ int     Request::get_error_code()
 long unsigned int     get_file_len(std::string file__name)
 {
     std::ifstream file(file__name.c_str());
+    std::cout << "file naaaame = [" << file__name << "]\n";
     if (!file.is_open())
         throw HTTPException(500);
     file.seekg(0, std::ios::end); // Move to the end of the file
@@ -504,7 +504,7 @@ void    Request::build_response()
     if (this->_serving_location.is_allowed_method(this->_method_str) == false)
         throw HTTPException(405);
     // max body size
-    if (get_file_len(this->_body_name) > this->_serving_location.get_client_max_body_size())
+    if (_method == POST && get_file_len(this->_body_name) > this->_serving_location.get_client_max_body_size())
         throw HTTPException(413);
     // specify which method
     if (this->_method == GET)
@@ -582,7 +582,7 @@ int    Request::find_requested_file()
     std::string rooooooot = this->_serving_location.get_root();
     if (rooooooot[rooooooot.length() - 1] != '/')
         rooooooot.push_back('/');
-    std::string only_path = this->_path.substr(0, this->_serving_location.get_path().length());
+    std::string only_path = this->_path.substr(this->_serving_location.get_path().length());
     if (only_path == "")
         this->_response_body_file = rooooooot;
     else 
@@ -655,6 +655,7 @@ void    Request::GET_file()
     }
     else
     {
+        std::cout << "fiiiiiiiiiiiiiiiiiiiiiiiiiiiiile\n";
         this->_which_body = FILE_BODY;
         throw HTTPException(200);
     }
@@ -664,22 +665,22 @@ void    Request::set_response_headers(std::string _code_str)
 {
     this->_response_headers = "";
     // status line 
-    _response_headers = std::string("HTTP/1.1") + " ";
+    _response_headers += std::string("HTTP/1.1") + " ";
     _response_headers += _code_str + " ";
     _response_headers += _request_handler.get_error_messages(_status_code) + "\r\n";
     // other headers ...
     // Content Type or Location and Content length
     if (this->_status_code >= 300 && this->_status_code < 400)
     {
-        _response_headers = std::string("Location:") + " ";
-        _response_headers = this->_returned_location + "\r\n";
+        _response_headers += std::string("Location:") + " ";
+        _response_headers += this->_returned_location + "\r\n";
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += std::string("0") + "\r\n";
     }
     else if (this->_status_code == 200 && this->_which_body == STR_BODY)
     {
-        _response_headers = std::string("Content-Type:") + " ";
-        _response_headers = std::string("text/html") + "\r\n";
+        _response_headers += std::string("Content-Type:") + " ";
+        _response_headers += std::string("text/html") + "\r\n";
         std::stringstream ss;
         ss << this->_response_body.length();
         _response_headers += std::string("Content-Length:") + " ";
@@ -694,8 +695,8 @@ void    Request::set_response_headers(std::string _code_str)
             ext = this->_response_body_file.substr(point_pos);
         else
             ext = ".txt"; 
-        _response_headers = std::string("Content-Type:") + " ";
-        _response_headers = get_conetnt_type(ext) + "\r\n";
+        _response_headers += std::string("Content-Type:") + " ";
+        _response_headers += get_conetnt_type(ext) + "\r\n";
         std::stringstream ss;
         ss << get_file_len(this->_response_body_file);
         _response_headers += std::string("Content-Length:") + " ";
@@ -715,7 +716,8 @@ void    Request::set_response_headers(std::string _code_str)
         std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&currentTime));
         // to string
         std::string date_str(buffer);
-        _response_headers = std::string("Date:") + " ";
-        _response_headers = date_str + "\r\n";
+        _response_headers += std::string("Date:") + " ";
+        _response_headers += date_str + "\r\n";
     }
+    _response_headers += "\r\n";
 }

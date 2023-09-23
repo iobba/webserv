@@ -173,7 +173,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
             {
                 perror("recv");
                 it++;
-                close_connection(client_socket);
+                // close_connection(client_socket);
                 continue ;
             }
             else if (bytes_read == 0)
@@ -232,30 +232,44 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             }
             else if (it->second._request._which_body == FILE_BODY)
             {
+                std::cout << "response headers :\n[ " << it->second._request._response_headers << "]\n";
                 std::ifstream  infile(it->second._request._response_body_file.c_str());
                 if (!infile.is_open())
                 {
                     std::cout << "infile in the response open error" << std::endl;
                     exit (1);
                 }
-                std::string line;
-                // int i = 0;
-                long unsigned int all_bytes_sent = 0;
-                int bytes_sent;
-                while (std::getline(infile, line))
-                {
-                    all_bytes_sent = 0;
-                    while (all_bytes_sent < line.length())
-                    {
-                        bytes_sent = send(clientSocket, line.c_str() + all_bytes_sent, line.length() - all_bytes_sent, 0);
-                        if (bytes_sent == -1)
-                            std::perror("send");
-                        all_bytes_sent += bytes_sent;
+
+                std::cout << "11111111111111111\n"; 
+                // Read and send the file in chunks
+                const int bufferSize = 1024; // Adjust the buffer size as needed
+                std::vector<char> buffer(bufferSize);
+                while (!infile.eof()) {
+                    infile.read(buffer.data(), bufferSize);
+                    int bytesRead = infile.gcount();
+                    if (bytesRead > 0) {
+                        send(clientSocket, buffer.data(), bytesRead, 0);
                     }
-                    //std::cout << "line " << i << std::endl;
-                    //i++;
                 }
+                // std::string line;
+                // // int i = 0;
+                // long unsigned int all_bytes_sent = 0;
+                // int bytes_sent;
+                // while (std::getline(infile, line))
+                // {
+                //     all_bytes_sent = 0;
+                //     while (all_bytes_sent < line.length())
+                //     {
+                //         bytes_sent = send(clientSocket, line.c_str() + all_bytes_sent, line.length() - all_bytes_sent, 0);
+                //         if (bytes_sent == -1)
+                //             std::perror("send");
+                //         all_bytes_sent += bytes_sent;
+                //     }
+                //     //std::cout << "line " << i << std::endl;
+                //     //i++;
+                // }
                 infile.close();
+                std::cout << "2222222222222222222\n"; 
             }
             
             /////////////////////////////////////////////////////////////////////////////////

@@ -35,7 +35,7 @@
 # define PORT "3490"  // the port users will be connecting to
 # define BACKLOG 10   // how many pending connections queue will hold
 # define BUFFER_SIZE 1024 // Size of the buffer to read incoming data
-# define MAX_URI_length 14
+# define MAX_URI_length 30
 # define MAX_BODY_SIZE 100000000 // this value not correct, cuz it should be taken from the config file 
 
 //extern long unsigned int num_files; // i am not sure if it is allowed to use a globale variable
