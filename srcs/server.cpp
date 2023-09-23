@@ -19,20 +19,20 @@ Server::Server()
 void        Server::errors_initialisation()
 {
     // set error pages 
-    _error_pages[400] = "/error_pages/400.html";
-    _error_pages[403] = "/error_pages/403.html";
-    _error_pages[404] = "/error_pages/404.html";
-    _error_pages[405] = "/error_pages/405.html";
-    _error_pages[408] = "/error_pages/408.html";
-    _error_pages[413] = "/error_pages/413.html";
-    _error_pages[414] = "/error_pages/414.html";
-    _error_pages[429] = "/error_pages/429.html";
-    _error_pages[431] = "/error_pages/431.html";
-    _error_pages[500] = "/error_pages/500.html";
-    _error_pages[501] = "/error_pages/501.html";
-    _error_pages[502] = "/error_pages/502.html";
-    _error_pages[505] = "/error_pages/505.html";
-    _error_pages[507] = "/error_pages/507.html";
+    _error_pages[400] = "/nfs/homes/iobba/Desktop/webserv/error_pages/400.html";
+    _error_pages[403] = "/nfs/homes/iobba/Desktop/webserv/error_pages/403.html";
+    _error_pages[404] = "/nfs/homes/iobba/Desktop/webserv/error_pages/404.html";
+    _error_pages[405] = "/nfs/homes/iobba/Desktop/webserv/error_pages/405.html";
+    _error_pages[408] = "/nfs/homes/iobba/Desktop/webserv/error_pages/408.html";
+    _error_pages[413] = "/nfs/homes/iobba/Desktop/webserv/error_pages/413.html";
+    _error_pages[414] = "/nfs/homes/iobba/Desktop/webserv/error_pages/414.html";
+    _error_pages[429] = "/nfs/homes/iobba/Desktop/webserv/error_pages/429.html";
+    _error_pages[431] = "/nfs/homes/iobba/Desktop/webserv/error_pages/431.html";
+    _error_pages[500] = "/nfs/homes/iobba/Desktop/webserv/error_pages/500.html";
+    _error_pages[501] = "/nfs/homes/iobba/Desktop/webserv/error_pages/501.html";
+    _error_pages[502] = "/nfs/homes/iobba/Desktop/webserv/error_pages/502.html";
+    _error_pages[505] = "/nfs/homes/iobba/Desktop/webserv/error_pages/505.html";
+    _error_pages[507] = "/nfs/homes/iobba/Desktop/webserv/error_pages/507.html";
     // set error messages
     _error_messages[200] = "OK";
     _error_messages[201] = "Created";
