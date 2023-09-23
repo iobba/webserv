@@ -32,6 +32,7 @@ void     Request::request_analysis()
     try
     {
         request_parser();
+        std::cout << "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere\n";
         if (this->_reading_done)
             build_response();
     }
