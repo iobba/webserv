@@ -409,33 +409,6 @@ bool    Request::is_reading_done()
     return (this->_reading_done);
 }
 
-void    Request::clearing_request()
-{
-    this->_method_str = "";
-    this->_method = NONE;
-    this->_path = "";
-    this->_version = "";
-    this->_headers_map.clear();
-    this->_body = "";
-    this->_body_length = 0;
-    this->_first_read = true;
-    this->_headers_finished = false;
-    this->_parsing_done = false;
-    this->_reading_done = false;
-    this->_error_code = 0;
-    this->_is_chunked = false;
-    this->_server_name = "";
-    this->_body_ignored = false;
-    this->_body_name = "";
-    this->_cleaned_body_name = "";
-    this->_tmp_response = "hello world!";
-    this->_all_headers_str = "";
-    this->_status_code = 200;
-    this->_returned_location = "";
-    this->_response_body = "";
-    this->_which_body = NONE;
-}
-
 bool    Request::_keep_connection()
 {
     std::map<std::string, std::string>::iterator it = _headers_map.find("Connection");

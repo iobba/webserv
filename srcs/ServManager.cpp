@@ -215,6 +215,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
         int clientSocket = it->first;
         if (FD_ISSET(clientSocket, tmp_writeset))
         {
+            bool sending_done = false;
             if (it->second._first_send)
             {
                 // send headers first
@@ -233,10 +234,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     perror("send");
                     exit (1);
                 }
-                it->second._request.clearing_request();
-                // and clearing response ...
-                FD_SET(clientSocket, &read_set);
-                FD_CLR(clientSocket, &write_set);
+                sending_done = true;
             }
             else if (it->second._request._which_body == FILE_BODY)
             {
@@ -247,11 +245,10 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     std::cout << "infile in the response open error" << std::endl;
                     exit (1);
                 }
-
                 std::cout << "11111111111111111\n"; 
                 // Read and send the file in chunks
                 infile.seekg(it->second._sending_offset);// move the pointer to a position
-                const int bufferSize = 1024;
+                const int bufferSize = 1000000;
                 std::vector<char> buffer(bufferSize);
                 infile.read(buffer.data(), bufferSize);
                 int bytesRead = infile.gcount();
@@ -263,57 +260,33 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                         perror("send");
                         exit (1);
                     }
-                    it->second._sending_offset += bytes_sent;
+                    else
+                        it->second._sending_offset += bytes_sent;
                 }
                 else
                 {
                     perror("read");
                     exit (1);
                 }
+                infile.close();
                 std::cout << "number of sent date is : " << it->second._sending_offset << std::endl;
                 if (it->second._sending_offset == get_file_len(it->second._request._response_body_file))
-                {
-                    // _keep connection()
-                    it->second._request.clearing_request();
-                    // and clearing response ...
-                    FD_SET(clientSocket, &read_set);
-                    FD_CLR(clientSocket, &write_set);
-                    // }
-                    // else
-                    // close_connection(clientSocket);
-                    //std::cout << "\nouuuuuuuuuuuuuuuuuuuuut\n";
-                }
-                // std::string line;
-                // // int i = 0;
-                // long unsigned int all_bytes_sent = 0;
-                // int bytes_sent;
-                // while (std::getline(infile, line))
-                // {
-                //     all_bytes_sent = 0;
-                //     while (all_bytes_sent < line.length())
-                //     {
-                //         bytes_sent = send(clientSocket, line.c_str() + all_bytes_sent, line.length() - all_bytes_sent, 0);
-                //         if (bytes_sent == -1)
-                //             std::perror("send");
-                //         all_bytes_sent += bytes_sent;
-                //     }
-                //     //std::cout << "line " << i << std::endl;
-                //     //i++;
-                // }
-                infile.close();
+                    sending_done = true;
                 std::cout << "2222222222222222222\n"; 
             }
-            
-            /////////////////////////////////////////////////////////////////////////////////
-            // int i = 0;
-            // while (all_bytes_sent < response.length())
-            // {
-            //     bytes_sent = send(clientSocket, response.c_str() + all_bytes_sent, response.length() - all_bytes_sent, 0);
-            //     if (bytes_sent == -1)
-            //         std::perror("send");
-            //     all_bytes_sent += bytes_sent;
-            // }
-            // /// send the body or the content
+            else
+                sending_done = true;
+            if (sending_done)
+            {
+                // clear the request and the response ...
+                it->second._sending_offset = 0;
+                it->second._first_send = true;
+                Request  new_request;
+                new_request._request_handler = it->second._request._request_handler;
+                it->second._request = new_request;
+                FD_SET(clientSocket, &read_set);
+                FD_CLR(clientSocket, &write_set);
+            }
         }
         it++;
     }
@@ -327,6 +300,8 @@ int     ServManager::close_connection(int to_close)
     if (FD_ISSET(to_close, &write_set))
         FD_CLR(to_close, &write_set);
     std::cout << "\nclose = [ " << to_close << " ]\n" ;
+    if (to_close + 1 == this->max_Fd)
+        this->max_Fd--;
     close(to_close);
     this->_clients_map.erase(to_close);
     return (EXIT_SUCCESS);

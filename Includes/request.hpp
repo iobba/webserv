@@ -71,7 +71,6 @@ class   Request
         bool                is_reading_done();
         void                which_method();
         void                print_request_parts();
-        void                clearing_request();
         void                parse_headers();
 
         ///////// response ////////
