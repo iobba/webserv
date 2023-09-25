@@ -572,7 +572,7 @@ int    Request::GET_directory()
 {
     if (this->_response_body_file[this->_response_body_file.length() - 1] != '/')
     {
-        this->_path.push_back('/');
+        this->_path += "/";
         this->_response_body_file = this->_path;
         throw HTTPException(301);
     }

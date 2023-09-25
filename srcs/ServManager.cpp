@@ -25,7 +25,7 @@ int ServManager::launch_servers(std::vector<Server> _servers_)
         exit (1);
     }
     print_esrvers_map();
-    std::cout << "Server is listening for connections on port 3490..." << std::endl;
+    std::cout << "Server is listening for connections on port 8008..." << std::endl;
     while (true)
     {
         fd_set tmp_ReadSet = this->read_set;
@@ -173,7 +173,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
             {
                 perror("recv");
                 it++;
-                // close_connection(client_socket);
+                close_connection(client_socket);
                 continue ;
             }
             else if (bytes_read == 0)
@@ -258,7 +258,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     if (bytes_sent < 0)
                     {
                         perror("send");
-                        exit (1);
+                        //exit (1);
                     }
                     else
                         it->second._sending_offset += bytes_sent;
