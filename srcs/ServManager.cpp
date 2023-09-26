@@ -42,7 +42,8 @@ int ServManager::launch_servers(std::vector<Server> _servers_)
             continue ;
 
         // Check for data from clients (recieve requests)
-        this->handle_request(&tmp_ReadSet);
+        if (this->handle_request(&tmp_ReadSet))
+            continue ;
 
         // Check for sockets ready for writing (send messages)
         this->handle_response(&tmp_WriteSet);
@@ -276,7 +277,10 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     exit (1);
                 }
                 else
+                {
                     sending_done = true;
+                    close(it->second._request._response_fd);
+                }
                 std::cout << "number of sent data is : " << it->second._sending_offset << std::endl;
                 std::cout << "2222222222222222222\n"; 
             }
@@ -285,7 +289,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             if (sending_done)
             {
                 // clear the request and the response ...
-                close(it->second._request._response_fd);
                 it->second._sending_offset = 0;
                 it->second._first_send = true;
                 Request  new_request;

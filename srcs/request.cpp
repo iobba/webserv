@@ -24,6 +24,7 @@ Request::Request()
     _response_body = "";
     _response_body_file = "";
     _which_body = NONE;
+    _response_fd = -1;
 }
 
 void     Request::request_analysis()
