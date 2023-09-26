@@ -39,6 +39,7 @@ class   Request
         std::string                         _response_body;
         std::string                         _response_headers;
         std::string                         _response_body_file;
+        int                                 _response_fd;
 
 
         ////////// request ////////
@@ -49,7 +50,6 @@ class   Request
         void                fill_request_vec(char buffer[], int bytes_read);
         std::string                         _body_name;
         std::string                         _cleaned_body_name;
-        std::string                         _tmp_response; // tmp
         Request();
         void                request_parser();
         void                request_analysis();

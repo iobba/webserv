@@ -18,13 +18,12 @@ Request::Request()
     _body_ignored = false;
     _body_name = "";
     _cleaned_body_name = "";
-    _tmp_response = "hello world!";
     _all_headers_str = "";
     _status_code = 200;
     _returned_location = "";
     _response_body = "";
+    _response_body_file = "";
     _which_body = NONE;
-    _headers_map.clear();
 }
 
 void     Request::request_analysis()

@@ -1,20 +1,27 @@
 #include <iostream>
-#include <string>
-#include <ctime>
+#include <unistd.h>
+#include <fcntl.h>
+
 
 int main() {
-    // Get the current time
-    std::time_t currentTime;
-    std::time(&currentTime);
+    // Open a file for reading
+    int fileDescriptor = open("/nfs/homes/iobba/Desktop/webserv/tests/yoooo.txt", O_RDONLY);
+    if (fileDescriptor == -1) {
+        std::cerr << "Error opening file for reading" << std::endl;
+        return 1;
+    }
 
-    // Format the current time as "Wed, 14 Sep 2023 12:00:00 GMT"
-    char buffer[50];
-    std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&currentTime));
+    // Read from the file
+    char buffer[1];
+    ssize_t bytesRead;
+    while ((bytesRead = read(fileDescriptor, buffer, sizeof(buffer))) > 0) {
+        // Process the data read (e.g., print it)
+        write(STDOUT_FILENO, buffer, bytesRead);
+        std::cout << "\n";
+    }
 
-    // Get the formatted time as a string
-    std::string dateHeader(buffer);
-
-    std::cout << "Date Header: " << dateHeader << std::endl;
+    // Close the file
+    close(fileDescriptor);
 
     return 0;
 }
