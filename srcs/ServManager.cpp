@@ -253,7 +253,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 std::cout << "response headers :\n[ " << it->second._request._response_headers << "]\n";
                 std::cout << "11111111111111111\n"; 
                 // Read and send the file in chunks
-                int bufferSize = 1024;
+                int bufferSize = 1000000;
                 char buffer[bufferSize]; // 1024
                 int bytesRead = read(it->second._request._response_fd, buffer, bufferSize);
                 if (bytesRead > 0) 

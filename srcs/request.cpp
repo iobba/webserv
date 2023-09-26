@@ -623,6 +623,16 @@ void    Request::GET_file()
     {
         // run cgi
         // and the _status_code depend on the cgi
+        const char* program_path = this->_response_body_file.c_str();
+        char* const args[2] = {(char *)program_path, NULL};
+        char* env[1];
+        env[0] = NULL;
+
+        if (execve(program_path, args, env) == -1) {
+        perror("execve");
+        exit (119);
+        }
+        std::cout << "cgiiiiiiiiiiiiii\n";
         this->_which_body = NONE; // just for the flow
         throw HTTPException(200);
     }

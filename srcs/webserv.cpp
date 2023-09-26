@@ -36,7 +36,7 @@ std::string     get_file_extention(std::string file_name)
 
     if (dot_position != std::string::npos) 
     {
-        return (file_name.substr(dot_position + 1));
+        return (file_name.substr(dot_position));
     }
     return ("");
 }
