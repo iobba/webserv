@@ -253,10 +253,10 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 std::cout << "response headers :\n[ " << it->second._request._response_headers << "]\n";
                 std::cout << "11111111111111111\n"; 
                 // Read and send the file in chunks
-                int bufferSize = 1000000;
+                int bufferSize = 1024;
                 char buffer[bufferSize]; // 1024
                 int bytesRead = read(it->second._request._response_fd, buffer, bufferSize);
-                if (bytesRead > 0) 
+                if (bytesRead > 0)
                 {
                     // std::cout << "buffer data ========= [" << buffer.data() << "]\n";
                     int bytes_sent = send(clientSocket, buffer, bytesRead, 0);
@@ -264,7 +264,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     {
                         std::cout << "problem fd = " << it->first << std::endl;
                         perror("send");
-                        exit (1);
+                        // exit (1);
                     }
                     else
                         it->second._sending_offset += bytes_sent;

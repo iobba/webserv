@@ -12,6 +12,7 @@ void signal_handler(int __sig)
 int main(int ac, char **av)
 {
     std::signal(SIGINT, signal_handler);
+    signal(SIGPIPE, SIG_IGN);
     //num_files = 0;
     if (ac <= 2)
     {
