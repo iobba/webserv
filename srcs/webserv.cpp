@@ -92,9 +92,12 @@ std::string get_conetnt_type(std::string extension)
     mime_types[".csv"] = "text/csv";
     mime_types[".swf"] = "application/x-shockwave-flash";
     mime_types[".flv"] = "video/x-flv";
+    mime_types[".py"] = "text/x-python";
+    mime_types[".php"] = "application/x-php";
+    mime_types[".sh"] = "application/x-shellscript";
 
     std::map<std::string, std::string>::iterator it = mime_types.find(extension);
     if (it != mime_types.end())
         return (it->second);
-    return ("Unknown Type");
+    return ("text/plain");
 } 
