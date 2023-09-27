@@ -623,16 +623,54 @@ void    Request::GET_file()
     {
         // run cgi
         // and the _status_code depend on the cgi
-        const char* program_path = this->_response_body_file.c_str();
-        char* const args[2] = {(char *)program_path, NULL};
-        char* env[1];
-        env[0] = NULL;
-
-        if (execve(program_path, args, env) == -1) {
-        perror("execve");
-        exit (119);
+        int cgi_pipe[2];
+        if (pipe(cgi_pipe) == -1)
+        {
+            perror("pipe");
+            exit (1);
         }
-        std::cout << "cgiiiiiiiiiiiiii\n";
+        pid_t _id = fork();
+        if (_id == -1)
+        {
+            perror("fork");
+            exit (1);
+        }
+        else if (_id == 0)
+        {
+            close(cgi_pipe[0]);
+            setenv("REQUEST_METHOD", "GET", 1);
+            dup2(cgi_pipe[1], 1);
+            close(cgi_pipe[1]);
+            const char* program_path = this->_response_body_file.c_str();
+            char* const args[2] = {(char *)program_path, NULL};
+            char* env[1];
+            env[0] = NULL;
+
+            if (execve(program_path, args, env) == -1)
+            perror("execve");
+            exit (1);
+        }
+        else
+        {
+            close(cgi_pipe[1]);
+            char buffer[1024];
+            ssize_t bytes_read;
+            while (true)
+            {
+                bytes_read = read(cgi_pipe[0], buffer, sizeof(buffer));
+                if (bytes_read < 0)
+                {
+                    perror("read from pipe");
+                    exit (1);
+                }
+                else if (bytes_read == 0)
+                    break ;
+                this->_response_body.append(buffer, bytes_read);
+            }
+            close(cgi_pipe[0]);
+        }
+        
+        std::cout << "cgiiiiiiiiiiiiii output [" << _response_body << "]\n";
         this->_which_body = NONE; // just for the flow
         throw HTTPException(200);
     }
