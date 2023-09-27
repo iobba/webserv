@@ -642,9 +642,23 @@ void    Request::GET_file()
             dup2(cgi_pipe[1], 1);
             close(cgi_pipe[1]);
             const char* program_path = this->_response_body_file.c_str();
-            char* const args[2] = {(char *)program_path, NULL};
-            char* env[1];
-            env[0] = NULL;
+            std::cout << "heeeeeeeeeeeeeeeeeeeeeere patt === " << ext_found->second << std::endl;
+            char* const args[3] = {(char *)ext_found->second.c_str(), (char *)program_path, NULL};
+            // cgi variables
+            char* env[3];
+            // std::string query_string("QUERY_STRING="); ///// NO need
+            // query_string.append("query_string_data");
+            // env[0] = (char*)query_string.c_str();
+            // HTTP_COOKIE
+            // redirect_status = "200";
+            // content type , content length
+            std::string request_method("REQUEST_METHOD=");
+            request_method.append(this->_method_str.c_str());
+            std::string script_filename("SCRIPT_FILENAME=");
+            script_filename.append(_response_body_file.c_str());
+            env[0] = (char*)request_method.c_str();
+            env[1] = (char*)script_filename.c_str(); // path to script
+            env[2] = NULL;
 
             if (execve(program_path, args, env) == -1)
             perror("execve");
