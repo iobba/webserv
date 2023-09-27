@@ -641,26 +641,30 @@ void    Request::GET_file()
             setenv("REQUEST_METHOD", "GET", 1);
             dup2(cgi_pipe[1], 1);
             close(cgi_pipe[1]);
-            const char* program_path = this->_response_body_file.c_str();
-            std::cout << "heeeeeeeeeeeeeeeeeeeeeere patt === " << ext_found->second << std::endl;
-            char* const args[3] = {(char *)ext_found->second.c_str(), (char *)program_path, NULL};
+            char* program_path = (char *)this->_response_body_file.c_str();
+            // std::cout << "heeeeeeeeeeeeeeeeeeeeeere patt === " << ext_found->second << std::endl;
+            char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
             // cgi variables
-            char* env[3];
+            char* env[4];
             // std::string query_string("QUERY_STRING="); ///// NO need
             // query_string.append("query_string_data");
             // env[0] = (char*)query_string.c_str();
             // HTTP_COOKIE
             // redirect_status = "200";
-            // content type , content length
+            // CONTENT_TYPE
+            // CONTENT_LENGTH
             std::string request_method("REQUEST_METHOD=");
             request_method.append(this->_method_str.c_str());
             std::string script_filename("SCRIPT_FILENAME=");
             script_filename.append(_response_body_file.c_str());
+            std::string redirect_status("REDIRECT_STATUS=");
+            redirect_status.append("200");
             env[0] = (char*)request_method.c_str();
             env[1] = (char*)script_filename.c_str(); // path to script
-            env[2] = NULL;
+            env[2] = (char*)redirect_status.c_str();
+            env[3] = NULL;
 
-            if (execve(program_path, args, env) == -1)
+            if (execve(args[0], args, env) == -1)
             perror("execve");
             exit (1);
         }
@@ -685,7 +689,7 @@ void    Request::GET_file()
         }
         
         std::cout << "cgiiiiiiiiiiiiii output [" << _response_body << "]\n";
-        this->_which_body = NONE; // just for the flow
+        this->_which_body = STR_BODY; // just for the flow
         throw HTTPException(200);
     }
     else
