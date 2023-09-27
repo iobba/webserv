@@ -84,6 +84,10 @@ class   Request
         void    POST_handler();
         int     find_requested_file();
         void    set_response_headers(std::string _code_str);
+        void    cgi_process(std::map<std::string,std::string>::iterator ext_found);
+        void    execute_cgi(std::map<std::string,std::string>::iterator ext_found);
+        void    recv_cgi_response(int cgi_pipe[]);
+
 
 
 };

@@ -623,86 +623,7 @@ void    Request::GET_file()
     {
         // run cgi
         // and the _status_code depend on the cgi
-        int cgi_pipe[2];
-        if (pipe(cgi_pipe) == -1)
-        {
-            perror("pipe");
-            exit (1);
-        }
-        pid_t _id = fork();
-        if (_id == -1)
-        {
-            perror("fork");
-            exit (1);
-        }
-        else if (_id == 0)
-        {
-            close(cgi_pipe[0]);
-            setenv("REQUEST_METHOD", "GET", 1);
-            dup2(cgi_pipe[1], 1);
-            close(cgi_pipe[1]);
-            char* program_path = (char *)this->_response_body_file.c_str();
-            // std::cout << "heeeeeeeeeeeeeeeeeeeeeere patt === " << ext_found->second << std::endl;
-            char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
-            // cgi variables
-            char* env[6];
-            // std::string query_string("QUERY_STRING="); ///// NO need
-            // query_string.append("query_string_data");
-            // env[0] = (char*)query_string.c_str();
-            // HTTP_COOKIE
-            // content type FOR POST
-            std::string content_type("CONTENT_TYPE=");
-            std::map<std::string, std::string>::iterator it1 = this->_headers_map.find("Content-Type");
-            if (it1 != this->_headers_map.end())
-                content_type.append(it1->second);
-            // content length FOR POST
-            std::string content_length("CONTENT_LENGTH=");
-            std::map<std::string, std::string>::iterator it2 = this->_headers_map.find("Content-Length");
-            if (it2 != this->_headers_map.end())
-                content_length.append(it1->second);
-            // method, filename, _status
-            std::string request_method("REQUEST_METHOD=");
-            request_method.append(this->_method_str.c_str());
-            std::string script_filename("SCRIPT_FILENAME=");
-            script_filename.append(_response_body_file.c_str());
-            std::string redirect_status("REDIRECT_STATUS=");
-            redirect_status.append("200");
-            env[0] = (char*)content_type.c_str();
-            env[1] = (char*)content_length.c_str();
-            env[2] = (char*)request_method.c_str();
-            env[3] = (char*)script_filename.c_str(); // path to script
-            env[4] = (char*)redirect_status.c_str();
-            env[5] = NULL;
-            std::cout << "env variables:\n";
-            for (int i = 0; i < 6; i++)
-                std::cout << "              " << env[i] << std::endl;
-            if (execve(args[0], args, env) == -1)
-            perror("execve");
-            exit (1);
-        }
-        else
-        {
-            close(cgi_pipe[1]);
-            char buffer[1024];
-            ssize_t bytes_read;
-            while (true)
-            {
-                bytes_read = read(cgi_pipe[0], buffer, sizeof(buffer));
-                if (bytes_read < 0)
-                {
-                    perror("read from pipe");
-                    exit (1);
-                }
-                else if (bytes_read == 0)
-                    break ;
-                this->_response_body.append(buffer, bytes_read);
-            }
-            close(cgi_pipe[0]);
-        }
-        
-        std::cout << "cgiiiiiiiiiiiiii output [" << _response_body << "]\n";
-        this->_which_body = STR_BODY; // just for the flow
-        throw HTTPException(200);
+        cgi_process(ext_found);
     }
     else
     {
@@ -711,6 +632,8 @@ void    Request::GET_file()
         throw HTTPException(200);
     }
 }
+
+
 
 void    Request::set_response_headers(std::string _code_str)
 {
@@ -771,4 +694,89 @@ void    Request::set_response_headers(std::string _code_str)
         _response_headers += date_str + "\r\n";
     }
     _response_headers += "\r\n";
+}
+
+void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_found)
+{
+    int cgi_pipe[2];
+    if (pipe(cgi_pipe) == -1)
+    {
+        perror("pipe");
+        exit (1);
+    }
+    pid_t _id = fork();
+    if (_id == -1)
+    {
+        perror("fork");
+        exit (1);
+    }
+    else if (_id == 0) // child
+    {
+        close(cgi_pipe[0]);
+        dup2(cgi_pipe[1], 1);
+        close(cgi_pipe[1]);
+        execute_cgi(ext_found);
+    }
+    // parent
+    recv_cgi_response(cgi_pipe);
+}
+
+void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_found)
+{
+    char* program_path = (char *)this->_response_body_file.c_str();
+    char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
+    char* env[6];
+    // HTTP_COOKIE
+    // content type FOR POST
+    std::string content_type("CONTENT_TYPE=");
+    std::map<std::string, std::string>::iterator it1 = this->_headers_map.find("Content-Type");
+    if (it1 != this->_headers_map.end())
+        content_type.append(it1->second);
+    // content length FOR POST
+    std::string content_length("CONTENT_LENGTH=");
+    std::map<std::string, std::string>::iterator it2 = this->_headers_map.find("Content-Length");
+    if (it2 != this->_headers_map.end())
+        content_length.append(it1->second);
+    // method, filename, _status
+    std::string request_method("REQUEST_METHOD=");
+    request_method.append(this->_method_str.c_str());
+    std::string script_filename("SCRIPT_FILENAME=");
+    script_filename.append(_response_body_file.c_str());
+    std::string redirect_status("REDIRECT_STATUS=");
+    redirect_status.append("200");
+    env[0] = (char*)content_type.c_str();
+    env[1] = (char*)content_length.c_str();
+    env[2] = (char*)request_method.c_str();
+    env[3] = (char*)script_filename.c_str(); // path to script
+    env[4] = (char*)redirect_status.c_str();
+    env[5] = NULL;
+    std::cout << "env variables:\n";
+    for (int i = 0; i < 6; i++)
+        std::cout << "              " << env[i] << std::endl;
+    if (execve(args[0], args, env) == -1)
+    perror("execve");
+    exit (1);
+}
+
+void    Request::recv_cgi_response(int cgi_pipe[])
+{
+    close(cgi_pipe[1]);
+    char buffer[1024];
+    ssize_t bytes_read;
+    while (true)
+    {
+        bytes_read = read(cgi_pipe[0], buffer, sizeof(buffer));
+        if (bytes_read < 0)
+        {
+            perror("read from pipe");
+            exit (1);
+        }
+        else if (bytes_read == 0)
+            break ;
+        this->_response_body.append(buffer, bytes_read);
+    }
+    close(cgi_pipe[0]);
+    std::cout << "cgiiiiiiiiiiiiii output [" << _response_body << "]\n";
+    this->_which_body = STR_BODY; // just for the flow
+    throw HTTPException(200);
 }
