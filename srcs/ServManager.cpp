@@ -213,15 +213,15 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
     std::map<int, Client>::iterator it = _clients_map.begin();
     while (it != _clients_map.end())
     {
-        int clientSocket = it->first;
-        if (FD_ISSET(clientSocket, tmp_writeset))
+        int client_socket = it->first;
+        if (FD_ISSET(client_socket, tmp_writeset))
         {
             bool sending_done = false;
             std::cout << "response fd = " << it->first << std::endl;
             if (it->second._first_send)
             {
                 // send headers first
-                if (send(clientSocket, it->second._request._response_headers.c_str(), it->second._request._response_headers.length(), 0) == -1)
+                if (send(client_socket, it->second._request._response_headers.c_str(), it->second._request._response_headers.length(), 0) == -1)
                 {
                     perror("send");
                     exit (1);
@@ -241,7 +241,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             // send the body
             if (it->second._request._which_body == STR_BODY)
             {
-                if (send(clientSocket, it->second._request._response_body.c_str(), it->second._request._response_body.length(), 0) == -1)
+                if (send(client_socket, it->second._request._response_body.c_str(), it->second._request._response_body.length(), 0) == -1)
                 {
                     perror("send");
                     exit (1);
@@ -258,13 +258,13 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 int bytesRead = read(it->second._request._response_fd, buffer, bufferSize);
                 if (bytesRead > 0)
                 {
-                    // std::cout << "buffer data ========= [" << buffer.data() << "]\n";
-                    int bytes_sent = send(clientSocket, buffer, bytesRead, 0);
+                    int bytes_sent = send(client_socket, buffer, bytesRead, 0);
                     if (bytes_sent < 0)
                     {
-                        std::cout << "problem fd = " << it->first << std::endl;
                         perror("send");
-                        // exit (1);
+                        it++;
+                        close_connection(client_socket);
+                        continue ;
                     }
                     else
                         it->second._sending_offset += bytes_sent;
@@ -294,8 +294,8 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 Request  new_request;
                 new_request._request_handler = it->second._request._request_handler;
                 it->second._request = new_request;
-                FD_SET(clientSocket, &read_set);
-                FD_CLR(clientSocket, &write_set);
+                FD_SET(client_socket, &read_set);
+                FD_CLR(client_socket, &write_set);
             }
         }
         it++;
