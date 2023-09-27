@@ -755,9 +755,9 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     env[3] = (char*)script_filename.c_str(); // path to script
     env[4] = (char*)redirect_status.c_str();
     env[5] = NULL;
-    std::cout << "env variables:\n";
-    for (int i = 0; i < 6; i++)
-        std::cout << "              " << env[i] << std::endl;
+    // std::cout << "env variables:\n";
+    // for (int i = 0; i < 6; i++)
+    //     std::cout << "              " << env[i] << std::endl;
     if (execve(args[0], args, env) == -1)
     perror("execve");
     exit (1);
@@ -784,6 +784,8 @@ void    Request::recv_cgi_response(int cgi_pipe[])
     close(cgi_pipe[0]);
     // status line
     size_t body_start = cgi_return.find("\r\n\r\n");
+    if (body_start == std::string::npos)
+        body_start = 0;
     size_t  found = cgi_return.find("HTTP/1.1");
     if (found != std::string::npos && found < body_start)
     {
@@ -809,7 +811,10 @@ void    Request::recv_cgi_response(int cgi_pipe[])
     // content length
     this->_cgi_response.append("Content-Length: ");
     std::stringstream ss;
-    ss << cgi_return.length() - (body_start + 4);
+    if (body_start >= 4)
+        ss << cgi_return.length() - (body_start + 4);
+    else
+        ss << cgi_return.length(); // body_start = 0
     this->_cgi_response += ss.str() + "\r\n";
     // Date if needed
     if (true)
@@ -825,7 +830,10 @@ void    Request::recv_cgi_response(int cgi_pipe[])
     }
     // add the body
     this->_cgi_response.append("\r\n");
-    this->_cgi_response += cgi_return.substr(body_start + 4);
+    if (body_start >= 4)
+        this->_cgi_response += cgi_return.substr(body_start + 4);
+    else
+        this->_cgi_response += cgi_return;
     std::cout << "cgiiiiiiiiiiiiii response [" << this->_cgi_response << "]\n";
     this->_which_body = STR_BODY; // just for the flow
     throw HTTPException(677173);
