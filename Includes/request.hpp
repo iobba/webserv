@@ -40,17 +40,18 @@ class   Request
         std::string                         _response_headers;
         std::string                         _response_body_file;
         int                                 _response_fd;
+        bool                                _is_cgi;
+        std::string                         _cgi_response;
 
 
         ////////// request ////////
-        // the server which is gonna handle this request
-        // ******************************************************
-        Server                              _request_handler;//**
-        // ******************************************************
-        void                fill_request_vec(char buffer[], int bytes_read);
+        // the server which is gonna handle this request*
+        Server                              _request_handler;
         std::string                         _body_name;
         std::string                         _cleaned_body_name;
+        // func
         Request();
+        void                fill_request_vec(char buffer[], int bytes_read);
         void                request_parser();
         void                request_analysis();
         void                request_line_analysis(std::string line);
