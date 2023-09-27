@@ -170,6 +170,8 @@ int     ServManager::handle_request(fd_set *tmp_readset)
             memset(buffer, 0, sizeof(buffer));
             // std::cout << "recv fd = "  << client_socket << std::endl;
             ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+            // std::string body(buffer, bytes_read);
+            // std::string b  += body;
             if (bytes_read == -1)
             {
                 perror("recv");

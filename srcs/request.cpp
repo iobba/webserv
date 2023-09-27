@@ -645,25 +645,37 @@ void    Request::GET_file()
             // std::cout << "heeeeeeeeeeeeeeeeeeeeeere patt === " << ext_found->second << std::endl;
             char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
             // cgi variables
-            char* env[4];
+            char* env[6];
             // std::string query_string("QUERY_STRING="); ///// NO need
             // query_string.append("query_string_data");
             // env[0] = (char*)query_string.c_str();
             // HTTP_COOKIE
-            // redirect_status = "200";
-            // CONTENT_TYPE
-            // CONTENT_LENGTH
+            // content type FOR POST
+            std::string content_type("CONTENT_TYPE=");
+            std::map<std::string, std::string>::iterator it1 = this->_headers_map.find("Content-Type");
+            if (it1 != this->_headers_map.end())
+                content_type.append(it1->second);
+            // content length FOR POST
+            std::string content_length("CONTENT_LENGTH=");
+            std::map<std::string, std::string>::iterator it2 = this->_headers_map.find("Content-Length");
+            if (it2 != this->_headers_map.end())
+                content_length.append(it1->second);
+            // method, filename, _status
             std::string request_method("REQUEST_METHOD=");
             request_method.append(this->_method_str.c_str());
             std::string script_filename("SCRIPT_FILENAME=");
             script_filename.append(_response_body_file.c_str());
             std::string redirect_status("REDIRECT_STATUS=");
             redirect_status.append("200");
-            env[0] = (char*)request_method.c_str();
-            env[1] = (char*)script_filename.c_str(); // path to script
-            env[2] = (char*)redirect_status.c_str();
-            env[3] = NULL;
-
+            env[0] = (char*)content_type.c_str();
+            env[1] = (char*)content_length.c_str();
+            env[2] = (char*)request_method.c_str();
+            env[3] = (char*)script_filename.c_str(); // path to script
+            env[4] = (char*)redirect_status.c_str();
+            env[5] = NULL;
+            std::cout << "env variables:\n";
+            for (int i = 0; i < 6; i++)
+                std::cout << "              " << env[i] << std::endl;
             if (execve(args[0], args, env) == -1)
             perror("execve");
             exit (1);
