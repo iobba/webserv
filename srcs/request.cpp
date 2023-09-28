@@ -90,10 +90,18 @@ void    Request::request_parser()
                 this->_reading_done = true;
                 return ;
             }
+            this->_body = this->_body.substr(headers_end + 4);
             // create a file to store the body
-            this->_body_name = create_body(".txt");
+            std::string file_type = "text/plain";
+            std::map<std::string, std::string>::iterator it3 = this->_headers_map.find("Content-Type");
+            if (it3 != this->_headers_map.end())
+                file_type = it3->second;
+            std::string file_ext = get_conetnt_type(file_type, 1);
+            this->_body_name = create_body(file_ext);
             if (this->_is_chunked)
-                this->_cleaned_body_name = create_body(".jpeg");
+                uploading();
+            //////////////////////  /// 
+            //////////////// here 
             std::ofstream o_body_file(this->_body_name.c_str(), std::ios::app);
             if (!o_body_file.is_open())
                 throw HTTPException(500);
@@ -126,9 +134,32 @@ void    Request::request_parser()
     }
 }
 
-std::string     Request::get_ext(std::string type)
+void    Request::uploading()
 {
-    std::map<std::string, std::string>::iterator it = this->
+    size_t  cr_lf = this->_body.find("\r\n");
+    if (cr_lf != std::string::npos)
+    {
+        unsigned long int _chunk_len = std::strtoul(this->_body.substr(0, cr_lf).c_str(), NULL, 16);
+        if (_chunk_len == 0) // end of body
+        {
+            this->_which_body == NONE;
+            throw HTTPException(201);
+        }
+        if (this->_body.length() - (cr_lf + 2) >= _chunk_len + 2)
+        {
+            std::string cleand_body = this->_body.substr(cr_lf + 2, _chunk_len);
+            std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
+            if (!uploaded_file.is_open())
+                throw HTTPException(500);
+            uploaded_file << cleand_body;
+            uploaded_file.close();
+            // check the uploading file len
+            if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
+                throw HTTPException(413);
+            this->_body = this->_body.substr(cr_lf + 2 + _chunk_len + 2);
+            uploading();
+        }
+    }
 }
 
 void    Request::parse_headers()
