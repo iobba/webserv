@@ -56,7 +56,7 @@ class   Request
         void                request_parser();
         void                request_analysis(char buffer[], int bytes_read);
         void                request_line_analysis(std::string line);
-        void                create_body(std::string _ext_);
+        std::string         create_body(std::string _ext_);
         void                parse_method();
         void                parse_path();
         void                parse_version();

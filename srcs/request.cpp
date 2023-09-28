@@ -98,14 +98,13 @@ void    Request::request_parser()
             if (it3 != this->_headers_map.end())
                 file_type = it3->second;
             std::string file_ext = get_conetnt_type(file_type, 1);
-            create_body(file_ext);
+            this->_body_name = create_body(file_ext);
             if (this->_is_chunked)
                 uploading();
             else
             {
-                std::string cleand_body = this->_body.substr(headers_end + 4);
-                write(this->_uploaded_fd, cleand_body.c_str(), cleand_body.length());
-                this->_body_recieved_len += cleand_body.length();
+                write(this->_uploaded_fd, this->_body.c_str(), this->_body.length());
+                this->_body_recieved_len += this->_body.length();
                 // look for end of body
                 if (this->_body_length == this->_body_recieved_len)
                 {
@@ -205,7 +204,7 @@ void    Request::parse_headers()
     this->analyze_headers(); // get some infos from headers
 }
 
-void    Request::create_body(std::string _ext_)
+std::string    Request::create_body(std::string _ext_)
 {
     // Get the current time in milliseconds
     std::time_t currentTime = std::time(NULL);
@@ -223,6 +222,7 @@ void    Request::create_body(std::string _ext_)
         std::cerr << "Failed to the uploaded file." << std::endl;
         throw HTTPException(500);
     }
+    return (file_name);
 }
 
 void    Request::analyze_headers()
