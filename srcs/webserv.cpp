@@ -108,7 +108,7 @@ std::string get_conetnt_type(std::string to_find, int i)
     while (it1 != mime_types.end())
     {
         if (it1->second == to_find)
-            return (it->first);
+            return (it1->first);
         it1++;
     }
     return (".txt");

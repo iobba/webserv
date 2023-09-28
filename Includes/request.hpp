@@ -88,6 +88,7 @@ class   Request
         void    cgi_process(std::map<std::string,std::string>::iterator ext_found);
         void    execute_cgi(std::map<std::string,std::string>::iterator ext_found);
         void    recv_cgi_response(int cgi_pipe[]);
+        void    uploading();
 
 
 

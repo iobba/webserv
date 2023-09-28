@@ -100,37 +100,53 @@ void    Request::request_parser()
             this->_body_name = create_body(file_ext);
             if (this->_is_chunked)
                 uploading();
-            //////////////////////  /// 
-            //////////////// here 
-            std::ofstream o_body_file(this->_body_name.c_str(), std::ios::app);
-            if (!o_body_file.is_open())
-                throw HTTPException(500);
-            // pass all headers + the empty line
-            char_it = this->_request_vec.begin() + headers_end + 4;
-            for (; char_it != this->_request_vec.end(); ++char_it)
+            else
             {
-                o_body_file.put(*char_it);
+                std::string cleand_body = this->_body.substr(headers_end + 4);
+                std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
+                if (!uploaded_file.is_open())
+                    throw HTTPException(500);
+                uploaded_file << cleand_body;
+                uploaded_file.close();
+                // look for end of body
+                if (this->_body_length == get_file_len(_body_name))
+                {
+                    this->_which_body = NONE;
+                    throw HTTPException(201);
+                }
+                if (this->_body_length < get_file_len(_body_name))
+                    throw HTTPException(400);
+                this->_body = "";
             }
-            o_body_file.close();
-            // watching the body length
-            watch_body_len();
-            this->_request_vec.clear();
+            // check the uploading file len
+            if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
+                throw HTTPException(413);
         }
     }
     else
     {
-        std::ofstream o_body_file(this->_body_name.c_str(), std::ios::app);
-        if (!o_body_file.is_open())
-            throw HTTPException(500);
-        char_it = this->_request_vec.begin();
-        for (; char_it != this->_request_vec.end(); ++char_it)
+        if (this->_is_chunked)
+                uploading();
+        else
         {
-            o_body_file.put(*char_it);
+            std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
+            if (!uploaded_file.is_open())
+                throw HTTPException(500);
+            uploaded_file << this->_body;
+            uploaded_file.close();
+            // look for end of body
+            if (this->_body_length == get_file_len(_body_name))
+            {
+                this->_which_body = NONE;
+                throw HTTPException(201);
+            }
+            if (this->_body_length < get_file_len(_body_name))
+                throw HTTPException(400);
+            this->_body = "";
         }
-        o_body_file.close();
-        // watching the body length
-        watch_body_len();
-        this->_request_vec.clear();
+        // check the uploading file len
+        if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
+            throw HTTPException(413);
     }
 }
 
@@ -142,7 +158,7 @@ void    Request::uploading()
         unsigned long int _chunk_len = std::strtoul(this->_body.substr(0, cr_lf).c_str(), NULL, 16);
         if (_chunk_len == 0) // end of body
         {
-            this->_which_body == NONE;
+            this->_which_body = NONE;
             throw HTTPException(201);
         }
         if (this->_body.length() - (cr_lf + 2) >= _chunk_len + 2)
@@ -153,9 +169,6 @@ void    Request::uploading()
                 throw HTTPException(500);
             uploaded_file << cleand_body;
             uploaded_file.close();
-            // check the uploading file len
-            if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
-                throw HTTPException(413);
             this->_body = this->_body.substr(cr_lf + 2 + _chunk_len + 2);
             uploading();
         }
