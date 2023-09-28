@@ -29,8 +29,10 @@ Request::Request()
     _cgi_response = "";
 }
 
-void     Request::request_analysis()
+void     Request::request_analysis(char buffer[], int bytes_read)
 {
+    std::string request_content(buffer, bytes_read);
+    this->_body += request_content;
     try
     {
         request_parser();
@@ -77,11 +79,11 @@ void    Request::request_parser()
     std::vector<char>::iterator char_it;
     if (this->_headers_finished == false)
     {
-        int headers_end = find_in_vector(this->_request_vec, "\r\n\r\n");
-        if (headers_end != -1)
+        size_t headers_end = this->_body.find("\r\n\r\n");
+        if (headers_end != std::string::npos)
         {
             // grab all headers's lines with their "\r\n"
-            this->_all_headers_str = std::string(this->_request_vec.begin(), this->_request_vec.begin() + headers_end + 2);
+            this->_all_headers_str = this->_body.substr(0, headers_end + 2);
             parse_headers();
             if (this->_body_ignored)
             {
@@ -122,6 +124,11 @@ void    Request::request_parser()
         watch_body_len();
         this->_request_vec.clear();
     }
+}
+
+std::string     Request::get_ext(std::string type)
+{
+    std::map<std::string, std::string>::iterator it = this->
 }
 
 void    Request::parse_headers()
@@ -247,6 +254,16 @@ void    Request::analyze_headers()
     }
     else if (this->_method == POST)
         throw HTTPException(400);
+    if (this->_method == POST)
+    {
+        if (get_matched_location() == 0)
+            throw HTTPException(404);
+        // check return
+        if (check_return())
+            throw HTTPException(301);
+        if (this->_serving_location.is_upload() == false) // get_requested_resource
+            this->_body_ignored = true;
+    }
 }
 
 int    Request::clean_chunked_body()
@@ -486,10 +503,10 @@ void    Request::build_response()
     // specify which method
     if (this->_method == GET)
         GET_handler();
-    // else if (this->_method == DELETE)
-    //     DELETE_handler();
+    else if (this->_method == POST)
+        POST_handler();
     // else
-    //     POST_handler();
+    //     DELETE_handler();
     std::cout << "\nWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTF\n\n";
 }
 
@@ -538,6 +555,13 @@ int     Request::check_return()
         return (1);
     }
     return (0);
+}
+
+void    Request::POST_handler()
+{
+    this->_which_body = STR_BODY;
+    this->_response_body = "Hello world!";
+    throw HTTPException(200);
 }
 
 void    Request::GET_handler()
@@ -675,7 +699,7 @@ void    Request::set_response_headers(std::string _code_str)
         else
             ext = ".txt"; 
         _response_headers += std::string("Content-Type:") + " ";
-        _response_headers += get_conetnt_type(ext) + "\r\n";
+        _response_headers += get_conetnt_type(ext, 0) + "\r\n";
         std::stringstream ss;
         ss << get_file_len(this->_response_body_file);
         _response_headers += std::string("Content-Length:") + " ";

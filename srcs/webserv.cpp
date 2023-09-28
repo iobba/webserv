@@ -52,7 +52,7 @@ void clear_and_replace(std::string file_name, std::string new_content)
     output_file.close();
 }
 
-std::string get_conetnt_type(std::string extension)
+std::string get_conetnt_type(std::string to_find, int i)
 {
     std::map<std::string, std::string> mime_types;
     mime_types[".html"] = "text/html";
@@ -96,8 +96,20 @@ std::string get_conetnt_type(std::string extension)
     mime_types[".php"] = "application/x-php";
     mime_types[".sh"] = "application/x-shellscript";
 
-    std::map<std::string, std::string>::iterator it = mime_types.find(extension);
-    if (it != mime_types.end())
-        return (it->second);
-    return ("text/plain");
+    if (i == 0)
+    {
+        std::map<std::string, std::string>::iterator it = mime_types.find(to_find);
+        if (it != mime_types.end())
+            return (it->second);
+        return ("text/plain");
+    }
+    // i == 1
+    std::map<std::string, std::string>::iterator it1 = mime_types.begin();
+    while (it1 != mime_types.end())
+    {
+        if (it1->second == to_find)
+            return (it->first);
+        it1++;
+    }
+    return (".txt");
 } 

@@ -53,7 +53,7 @@ class   Request
         Request();
         void                fill_request_vec(char buffer[], int bytes_read);
         void                request_parser();
-        void                request_analysis();
+        void                request_analysis(char buffer[], int bytes_read);
         void                request_line_analysis(std::string line);
         long long           look_for_word(std::string file__name, std::string to_find);
         std::string         create_body(std::string _ext_);

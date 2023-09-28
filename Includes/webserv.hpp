@@ -97,6 +97,6 @@ int                         find_in_vector(std::vector<char> __vec, std::string 
 long unsigned int           get_file_len(std::string file__name);
 std::string                 get_file_extention(std::string file_name);
 void                        clear_and_replace(std::string file_name, std::string new_content);
-std::string                 get_conetnt_type(std::string extension);
+std::string                 get_conetnt_type(std::string to_find, int i);
 
 #endif

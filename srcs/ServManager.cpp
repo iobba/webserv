@@ -192,7 +192,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                     it->second._request.fill_request_vec(buffer, bytes_read);
                     std::cout << "Received request from client:\n" << bytes_read << std::endl;
                     std::cout << "-----------------------------------------------\n";
-                    it->second._request.request_analysis();
+                    it->second._request.request_analysis(buffer, bytes_read);
                     if (it->second._request.is_reading_done())
                     {
                         // build the response ...
