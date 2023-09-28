@@ -27,6 +27,7 @@ Request::Request()
     _response_fd = -1;
     _is_cgi = false;
     _cgi_response = "";
+    _body_recieved_len = 0;
 }
 
 void     Request::request_analysis(char buffer[], int bytes_read)
@@ -36,7 +37,7 @@ void     Request::request_analysis(char buffer[], int bytes_read)
     try
     {
         request_parser();
-        print_request_parts(); // just to see the world
+        // print_request_parts(); // just to see the world
         if (this->_reading_done)
             build_response();
     }
@@ -97,30 +98,34 @@ void    Request::request_parser()
             if (it3 != this->_headers_map.end())
                 file_type = it3->second;
             std::string file_ext = get_conetnt_type(file_type, 1);
-            this->_body_name = create_body(file_ext);
+            create_body(file_ext);
             if (this->_is_chunked)
                 uploading();
             else
             {
                 std::string cleand_body = this->_body.substr(headers_end + 4);
-                std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
-                if (!uploaded_file.is_open())
-                    throw HTTPException(500);
-                uploaded_file << cleand_body;
-                uploaded_file.close();
+                write(this->_uploaded_fd, cleand_body.c_str(), cleand_body.length());
+                this->_body_recieved_len += cleand_body.length();
                 // look for end of body
-                if (this->_body_length == get_file_len(_body_name))
+                if (this->_body_length == this->_body_recieved_len)
                 {
+                    close (this->_uploaded_fd);
                     this->_which_body = NONE;
                     throw HTTPException(201);
                 }
-                if (this->_body_length < get_file_len(_body_name))
+                if (this->_body_length < this->_body_recieved_len)
+                {
+                    close (this->_uploaded_fd);
                     throw HTTPException(400);
+                }
                 this->_body = "";
             }
             // check the uploading file len
-            if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
+            if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
+            {
+                close (this->_uploaded_fd);
                 throw HTTPException(413);
+            }
         }
     }
     else
@@ -129,24 +134,28 @@ void    Request::request_parser()
                 uploading();
         else
         {
-            std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
-            if (!uploaded_file.is_open())
-                throw HTTPException(500);
-            uploaded_file << this->_body;
-            uploaded_file.close();
+            write(this->_uploaded_fd, _body.c_str(), _body.length());
+            this->_body_recieved_len += _body.length();
             // look for end of body
-            if (this->_body_length == get_file_len(_body_name))
+            if (this->_body_length == this->_body_recieved_len)
             {
+                close (this->_uploaded_fd);
                 this->_which_body = NONE;
                 throw HTTPException(201);
             }
-            if (this->_body_length < get_file_len(_body_name))
+            if (this->_body_length < this->_body_recieved_len)
+            {
+                close (this->_uploaded_fd);
                 throw HTTPException(400);
+            }
             this->_body = "";
         }
         // check the uploading file len
-        if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
+        if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
+        {
+            close (this->_uploaded_fd);
             throw HTTPException(413);
+        }
     }
 }
 
@@ -159,16 +168,15 @@ void    Request::uploading()
         if (_chunk_len == 0) // end of body
         {
             this->_which_body = NONE;
+            close (this->_uploaded_fd);
             throw HTTPException(201);
         }
         if (this->_body.length() - (cr_lf + 2) >= _chunk_len + 2)
         {
             std::string cleand_body = this->_body.substr(cr_lf + 2, _chunk_len);
-            std::ofstream uploaded_file(this->_body_name.c_str(), std::ios::app);
-            if (!uploaded_file.is_open())
-                throw HTTPException(500);
-            uploaded_file << cleand_body;
-            uploaded_file.close();
+            write(this->_uploaded_fd, cleand_body.c_str(), cleand_body.length());
+            this->_body_recieved_len += cleand_body.length();
+            // update the body string
             this->_body = this->_body.substr(cr_lf + 2 + _chunk_len + 2);
             uploading();
         }
@@ -197,40 +205,7 @@ void    Request::parse_headers()
     this->analyze_headers(); // get some infos from headers
 }
 
-void    Request::watch_body_len()
-{
-    if (get_file_len(_body_name) > this->_request_handler.get_client_max_body_size())
-        throw HTTPException(413);
-    if (this->_is_chunked)
-    {
-        long long  body_end = look_for_word(_body_name, std::string("\r\n0\r\n"));
-        if (body_end != -1)
-        {
-            //std::cout << "\n\nHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH" << "\n\n";
-            // clean the body
-            this->_body_length = get_file_len(_cleaned_body_name);
-            if (clean_chunked_body())
-                this->_reading_done = true;
-            else
-            {
-                // clear the cleaned body file
-                std::ofstream file(this->_cleaned_body_name.c_str(), std::ios::out | std::ios::trunc);
-                if (!file.is_open())
-                    throw HTTPException(500);
-                file.close();
-            }
-        }
-    }
-    else
-    {
-        if (this->_body_length == get_file_len(_body_name))
-            this->_reading_done = true;
-        if (this->_body_length < get_file_len(_body_name))
-            throw HTTPException(400);
-    }
-}
-
-std::string    Request::create_body(std::string _ext_)
+void    Request::create_body(std::string _ext_)
 {
     // Get the current time in milliseconds
     std::time_t currentTime = std::time(NULL);
@@ -242,38 +217,12 @@ std::string    Request::create_body(std::string _ext_)
     ss << randooooooomNum;
     std::string file_name = "/nfs/sgoinfre/goinfre/Perso/iobba/" + ss.str() + _ext_;
     // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
-    std::ofstream o_body_file(file_name.c_str());
-    if (!o_body_file.is_open())
-        throw HTTPException(500);
-    o_body_file.close();
-    return (file_name);
-}
-
-long long     Request::look_for_word(std::string file__name, std::string to_find)
-{
-    std::ifstream file(file__name.c_str());
-    if (!file.is_open())
-        throw HTTPException(500);
-    char c;
-    size_t _index = 0;
-    long long _pos = 0;
-    while (file.get(c))
+    this->_uploaded_fd = open(file_name.c_str(), O_CREAT | O_WRONLY);
+    if (this->_uploaded_fd == -1)
     {
-        if (c == to_find[_index])
-        {
-            _index++;
-            if (_index == to_find.length())
-            {
-                file.close();
-                return (_pos);
-            }
-        }
-        else
-            _index = 0;
-        _pos++;
+        std::cerr << "Failed to the uploaded file." << std::endl;
+        throw HTTPException(500);
     }
-    file.close();
-    return (-1);
 }
 
 void    Request::analyze_headers()
@@ -308,64 +257,6 @@ void    Request::analyze_headers()
         if (this->_serving_location.is_upload() == false) // get_requested_resource
             this->_body_ignored = true;
     }
-}
-
-int    Request::clean_chunked_body()
-{
-    std::ifstream inputFile(this->_body_name.c_str()); // Open the input file for reading
-    std::ofstream outputFile(this->_cleaned_body_name.c_str()); // Open the input file for reading
-
-    if (!inputFile.is_open() || !inputFile.is_open())
-    {
-        std::cerr << "Failed to open the file." << std::endl;
-        throw HTTPException(500);
-    }
-
-    char ch;
-    bool is_in_size_line = true;
-    std::string     size_line;
-    long unsigned int chunk_len;
-    while (inputFile.get(ch))
-    {
-        if (is_in_size_line)
-        {
-            if (ch != '\r')
-                size_line.push_back(ch);
-            else
-            {
-                chunk_len = std::strtoul(size_line.c_str(), NULL, 16);
-                size_line.clear();
-                is_in_size_line = false;
-                if (!inputFile.get(ch))
-                    break ;
-                if (chunk_len == 0)
-                {
-                    // end of body
-                    inputFile.close();
-                    outputFile.close();
-                    return (1);
-                }
-
-            }
-        }
-        else
-        {
-            if (chunk_len == 0)
-            {
-                if (!inputFile.get(ch))
-                    break ;
-                is_in_size_line = true;
-            }
-            else
-            {
-                outputFile.put(ch);
-                chunk_len--;
-            }
-        }
-    }
-    inputFile.close();
-    outputFile.close();
-    return (0);
 }
 
 void    Request::print_request_parts()
@@ -484,50 +375,9 @@ bool    Request::_keep_connection()
     return (false);
 }
 
-void    Request::fill_request_vec(char buffer[], int bytes_read)
-{
-    int i = 0;
-    while (i < bytes_read)
-    {
-        this->_request_vec.push_back(buffer[i]);
-        i++;
-    }
-}
-
 int     Request::get_error_code()
 {
     return (this->_error_code);
-}
-
-long unsigned int     get_file_len(std::string file__name)
-{
-    std::ifstream file(file__name.c_str());
-    std::cout << "file naaaame = [" << file__name << "]\n";
-    if (!file.is_open())
-        throw HTTPException(500);
-    file.seekg(0, std::ios::end); // Move to the end of the file
-    long unsigned int   __len = file.tellg(); // Get the current position (file size)
-    file.close();
-    return (__len);
-}
-
-int     find_in_vector(std::vector<char> __vec, std::string to_find)
-{
-    long unsigned int i = 0;
-    long unsigned int j = 0;
-    while (i < __vec.size())
-    {
-        if (__vec[i] == to_find[j])
-        {
-            j++;
-            if (j == to_find.length())
-                return (i - (j - 1));
-        }
-        else
-            j = 0;
-        i++;
-    }
-    return (-1);
 }
 
 ///////////// response //////////////////

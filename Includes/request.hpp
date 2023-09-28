@@ -26,6 +26,8 @@ class   Request
         bool                                _is_chunked;
         std::string                         _server_name;
         bool                                _body_ignored;
+        int                                 _uploaded_fd;
+        unsigned long int                   _body_recieved_len;
 
 
 
@@ -51,18 +53,14 @@ class   Request
         std::string                         _cleaned_body_name;
         // func
         Request();
-        void                fill_request_vec(char buffer[], int bytes_read);
         void                request_parser();
         void                request_analysis(char buffer[], int bytes_read);
         void                request_line_analysis(std::string line);
-        long long           look_for_word(std::string file__name, std::string to_find);
-        std::string         create_body(std::string _ext_);
-        void                watch_body_len();
+        void                create_body(std::string _ext_);
         void                parse_method();
         void                parse_path();
         void                parse_version();
         void                analyze_headers();
-        int                 clean_chunked_body();
         void                handle_GET();
         void                handle_DELETE();
         void                handle_POST();

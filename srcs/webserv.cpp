@@ -113,3 +113,15 @@ std::string get_conetnt_type(std::string to_find, int i)
     }
     return (".txt");
 } 
+
+long unsigned int     get_file_len(std::string file__name)
+{
+    std::ifstream file(file__name.c_str());
+    std::cout << "file naaaame = [" << file__name << "]\n";
+    if (!file.is_open())
+        throw HTTPException(500);
+    file.seekg(0, std::ios::end); // Move to the end of the file
+    long unsigned int   __len = file.tellg(); // Get the current position (file size)
+    file.close();
+    return (__len);
+}
