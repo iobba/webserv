@@ -26,7 +26,6 @@ Request::Request()
     _which_body = NONE;
     _response_fd = -1;
     _is_cgi = false;
-    _cgi_response_headers = "";
     _body_recieved_len = 0;
 }
 

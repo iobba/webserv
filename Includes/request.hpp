@@ -43,8 +43,6 @@ class   Request
         std::string                         _response_body_file;
         int                                 _response_fd;
         bool                                _is_cgi;
-        std::string                         _cgi_response_headers;
-
 
         ////////// request ////////
         // the server which is gonna handle this request*
