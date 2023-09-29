@@ -75,9 +75,6 @@ void Request::which_method()
 
 void    Request::request_parser()
 {
-    std::string line;
-    std::vector<char>::iterator it_find;
-    std::vector<char>::iterator char_it;
     if (this->_headers_finished == false)
     {
         size_t headers_end = this->_body.find("\r\n\r\n");
@@ -99,62 +96,41 @@ void    Request::request_parser()
                 file_type = it3->second;
             std::string file_ext = get_conetnt_type(file_type, 1);
             this->_body_name = create_body(file_ext);
-            if (this->_is_chunked)
-                uploading();
-            else
-            {
-                write(this->_uploaded_fd, this->_body.c_str(), this->_body.length());
-                this->_body_recieved_len += this->_body.length();
-                // look for end of body
-                if (this->_body_length == this->_body_recieved_len)
-                {
-                    close (this->_uploaded_fd);
-                    this->_which_body = NONE;
-                    throw HTTPException(201);
-                }
-                if (this->_body_length < this->_body_recieved_len)
-                {
-                    close (this->_uploaded_fd);
-                    throw HTTPException(400);
-                }
-                this->_body = "";
-            }
-            // check the uploading file len
-            if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
-            {
-                close (this->_uploaded_fd);
-                throw HTTPException(413);
-            }
+            this->_body_recieved_len = 0;
         }
+        else
+            return ;
     }
+    upload_body();
+}
+
+void    Request::upload_body()
+{
+    if (this->_is_chunked)
+            uploading();
     else
     {
-        if (this->_is_chunked)
-                uploading();
-        else
-        {
-            write(this->_uploaded_fd, _body.c_str(), _body.length());
-            this->_body_recieved_len += _body.length();
-            // look for end of body
-            if (this->_body_length == this->_body_recieved_len)
-            {
-                close (this->_uploaded_fd);
-                this->_which_body = NONE;
-                throw HTTPException(201);
-            }
-            if (this->_body_length < this->_body_recieved_len)
-            {
-                close (this->_uploaded_fd);
-                throw HTTPException(400);
-            }
-            this->_body = "";
-        }
-        // check the uploading file len
-        if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
+        write(this->_uploaded_fd, _body.c_str(), _body.length());
+        this->_body_recieved_len += _body.length();
+        // look for end of body
+        if (this->_body_length == this->_body_recieved_len)
         {
             close (this->_uploaded_fd);
-            throw HTTPException(413);
+            this->_which_body = NONE;
+            throw HTTPException(201);
         }
+        if (this->_body_length < this->_body_recieved_len)
+        {
+            close (this->_uploaded_fd);
+            throw HTTPException(400);
+        }
+        this->_body = "";
+    }
+    // check the uploading file len
+    if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
+    {
+        close (this->_uploaded_fd);
+        throw HTTPException(413);
     }
 }
 
@@ -228,7 +204,6 @@ std::string    Request::create_body(std::string _ext_)
 
 void    Request::analyze_headers()
 {
-    // parse the headers , i need to take 4 infos from it
     std::map<std::string, std::string>::iterator it1 = _headers_map.find("Host");
     if (it1 != _headers_map.end())
         this->_server_name = it1->second;
