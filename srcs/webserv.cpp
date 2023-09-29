@@ -125,3 +125,31 @@ long unsigned int     get_file_len(std::string file__name)
     file.close();
     return (__len);
 }
+
+int delete_directory_contents(std::string path)
+{
+    DIR* dir = opendir(path.c_str());
+    if (!dir)
+    {
+        std::cerr << "Error opening directory" << std::endl;
+        return (1);
+    }
+
+    dirent* entry;
+    while ((entry = readdir(dir)))
+    {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+        {
+            if (path[path.length() - 1] != '/')
+                path.append("/");
+            std::string full_path = path + entry->d_name;
+            if (unlink(full_path.c_str()) == -1)
+            {
+                std::cerr << "Error deleting file: " << full_path << std::endl;
+                return (1);
+            }
+        }
+    }
+    closedir(dir);
+    return (0);
+}

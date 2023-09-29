@@ -81,6 +81,8 @@ class   Request
         int     GET_directory();
         void    GET_file();
         void    DELETE_handler();
+        void    delete_file();
+        int     delete_directory();
         int     find_requested_file();
         void    set_response_headers(std::string _code_str);
         void    cgi_process(std::map<std::string,std::string>::iterator ext_found);
