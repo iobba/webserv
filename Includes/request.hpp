@@ -61,9 +61,6 @@ class   Request
         void                parse_path();
         void                parse_version();
         void                analyze_headers();
-        void                handle_GET();
-        void                handle_DELETE();
-        void                handle_POST();
         int                 get_error_code();
         bool                _keep_connection();
         void                set_reading_done();

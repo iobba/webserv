@@ -299,40 +299,25 @@ void     Request::request_line_analysis(std::string line)
 void    Request::parse_method()
 {
     if (this->_method_str.compare("GET") == 0)
-        this->handle_GET();
+    {
+        this->_method = GET;
+        this->_body_ignored = true;
+    }
     else if (this->_method_str.compare("DELETE") == 0)
-        this->handle_DELETE();
+    {
+        this->_method = DELETE;
+        this->_body_ignored = true;
+    }
     else if (this->_method_str.compare("POST") == 0)
-        this->handle_POST();
+    {
+        this->_method = POST;
+        this->_body_ignored = false;
+    }
     else
     {
         this->_method = NONE;
         throw HTTPException(501);
     }
-}
-
-void    Request::handle_GET()
-{
-    this->_method = GET;
-    this->_method_str = "GET";
-    this->_body_ignored = true;
-    // ...
-}
-
-void    Request::handle_DELETE()
-{
-    this->_method = DELETE;
-    this->_method_str = "DELETE";
-    this->_body_ignored = true;
-    // ...
-}
-
-void    Request::handle_POST()
-{
-    this->_method = POST;
-    this->_method_str = "POST";
-    this->_body_ignored = false;
-    // ...
 }
 
 void    Request::parse_path()
