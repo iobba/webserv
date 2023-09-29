@@ -59,18 +59,11 @@ void     Request::request_analysis(char buffer[], int bytes_read)
         }
         set_response_headers(e.what());
     }
-    // which_method();
-    // ...
 }
 
 void    Request::set_reading_done()
 {
     this->_reading_done = true;
-}
-
-void Request::which_method()
-{
-    // ...
 }
 
 void    Request::request_parser()

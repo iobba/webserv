@@ -65,7 +65,6 @@ class   Request
         bool                _keep_connection();
         void                set_reading_done();
         bool                is_reading_done();
-        void                which_method();
         void                print_request_parts();
         void                parse_headers();
 
