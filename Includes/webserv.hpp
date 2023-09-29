@@ -100,5 +100,6 @@ void                        clear_and_replace(std::string file_name, std::string
 std::string                 get_conetnt_type(std::string to_find, int i);
 std::string                 generate_html_page_dir(std::string dir_path);
 int                         delete_directory_contents(std::string path);
+int                         create_file(std::string _ext_, std::string& naaaame);
 
 #endif

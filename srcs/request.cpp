@@ -26,7 +26,7 @@ Request::Request()
     _which_body = NONE;
     _response_fd = -1;
     _is_cgi = false;
-    _cgi_response = "";
+    _cgi_response_headers = "";
     _body_recieved_len = 0;
 }
 
@@ -686,7 +686,11 @@ void    Request::recv_cgi_response(int cgi_pipe[])
     close(cgi_pipe[1]);
     char buffer[1024];
     ssize_t bytes_read;
-    std::string cgi_return;
+    std::string cgi_body;
+    std::string cgi_returned_headers;
+    // this read has to be after waitpid
+    int fd_out = create_file(".txt", this->_response_body_file);
+    int premier_read = true;
     while (true)
     {
         bytes_read = read(cgi_pipe[0], buffer, sizeof(buffer));
@@ -697,51 +701,66 @@ void    Request::recv_cgi_response(int cgi_pipe[])
         }
         else if (bytes_read == 0)
             break ;
-        cgi_return.append(buffer, bytes_read);
+        std::string cgi_return(buffer, bytes_read);
+        if (premier_read)
+        {
+            premier_read = false;
+            size_t body_start = cgi_return.find("\r\n\r\n");
+            if (body_start == std::string::npos)
+                cgi_returned_headers = "";
+            else
+            {
+                cgi_returned_headers = cgi_return.substr(0, body_start + 2);
+                cgi_return = cgi_return.substr(body_start + 4);
+            }
+        }
+        write(fd_out, cgi_return.c_str(), cgi_return.length());
     }
     close(cgi_pipe[0]);
-    set_cgi_headers(cgi_return);
-    std::cout << "cgiiiiiiiiiiiiii response [" << this->_cgi_response << "]\n";
-    this->_which_body = STR_BODY; // just for the flow
+    close(fd_out);
+    set_cgi_headers(cgi_returned_headers);
+    std::cout << "cgiiiiiiiiiiiiii response [" << this->_response_headers << "]\n";
+    this->_which_body = FILE_BODY; // just for the flow
     throw HTTPException(677173);
 }
 
 void    Request::set_cgi_headers(std::string cgi_return)
 {
     // status line
-    size_t body_start = cgi_return.find("\r\n\r\n");
-    if (body_start == std::string::npos)
-        body_start = 0;
     size_t  found = cgi_return.find("HTTP/1.1");
-    if (found != std::string::npos && found < body_start)
+    if (found != std::string::npos)
     {
-        size_t cr_lf = cgi_return.find_first_of("\r\n", found);
-        this->_cgi_response = cgi_return.substr(found, cr_lf - found);
-        this->_cgi_response.append("\r\n");
+        size_t cr_lf = cgi_return.find_first_of(";\r\n", found);
+        this->_response_headers = cgi_return.substr(found, cr_lf - found);
+        this->_response_headers.append("\r\n");
     }
     else
-        this->_cgi_response.append("HTTP/1.1 200 OK\r\n");
+        this->_response_headers.append("HTTP/1.1 200 OK\r\n");
     // content type
-    this->_cgi_response.append("Content-Type: ");
-    found = cgi_return.find("Content-type: ");
+    this->_response_headers.append("Content-Type: ");
     std::string content_type;
-    if (found != std::string::npos && found < body_start)
+    found = cgi_return.find("Content-type: ");
+    if (found != std::string::npos)
     {
         size_t semicolon_nl = cgi_return.find_first_of(";\r\n", found);
         content_type = cgi_return.substr(found + 14, semicolon_nl - (found + 14));
-        this->_cgi_response += content_type;
-        this->_cgi_response.append("\r\n");
+        this->_response_headers += content_type;
+        this->_response_headers.append("\r\n");
     }
     else
-        this->_cgi_response.append("text/html\r\n");
+        this->_response_headers.append("text/html\r\n");
     // content length
-    this->_cgi_response.append("Content-Length: ");
+    this->_response_headers.append("Content-Length: ");
     std::stringstream ss;
-    if (body_start >= 4)
-        ss << cgi_return.length() - (body_start + 4);
+    found = cgi_return.find("Content-Length: ");
+    if (found != std::string::npos)
+    {
+        size_t semicolon_nl = cgi_return.find_first_of(";\r\n", found);
+        ss << cgi_return.substr(found + 16, semicolon_nl - (found + 16));
+    }
     else
-        ss << cgi_return.length(); // body_start = 0
-    this->_cgi_response += ss.str() + "\r\n";
+        ss << get_file_len(this->_response_body_file);
+    this->_response_headers += ss.str() + "\r\n";
     // Date if needed
     if (true)
     {
@@ -751,13 +770,9 @@ void    Request::set_cgi_headers(std::string cgi_return)
         std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&currentTime));
         // to string
         std::string date_str(buffer);
-        this->_cgi_response += std::string("Date:") + " ";
-        this->_cgi_response += date_str + "\r\n";
+        this->_response_headers += std::string("Date:") + " ";
+        this->_response_headers += date_str + "\r\n";
     }
     // add the body
-    this->_cgi_response.append("\r\n");
-    if (body_start >= 4)
-        this->_cgi_response += cgi_return.substr(body_start + 4);
-    else
-        this->_cgi_response += cgi_return;
+    this->_response_headers.append("\r\n");
 }

@@ -175,3 +175,26 @@ std::string     generate_html_page_dir(std::string dir_path)
     closedir(dir);
     return (html_content);
 }
+
+int    create_file(std::string _ext_, std::string& naaaame)
+{
+    // Get the current time in milliseconds
+    std::time_t currentTime = std::time(NULL);
+    unsigned int milliseconds = static_cast<unsigned int>(currentTime);
+    static long unsigned int num_files = 0;
+    num_files++;
+    long unsigned int randooooooomNum = milliseconds + num_files;
+    std::stringstream ss;
+    ss << randooooooomNum;
+    std::string file_name = "/nfs/sgoinfre/goinfre/Perso/iobba/"; // path
+    file_name += ss.str() + _ext_;
+    // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
+    int fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0777);
+    if (fd == -1)
+    {
+        std::cerr << "Failed to the uploaded file." << std::endl;
+        throw HTTPException(500);
+    }
+    naaaame = file_name;
+    return (fd);
+}

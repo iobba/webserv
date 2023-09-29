@@ -219,10 +219,11 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
         {
             bool sending_done = false;
             std::cout << "response fd = " << it->first << std::endl;
-            if (it->second._first_send && it->second._request._is_cgi == false)
+            if (it->second._first_send)
             {
                 // send headers first
-                if (send(client_socket, it->second._request._response_headers.c_str(), it->second._request._response_headers.length(), 0) == -1)
+                std::string headers = it->second._request._response_headers;
+                if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
                 {
                     perror("send");
                     exit (1);
@@ -238,16 +239,12 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     }
                     it->second._request._response_fd = fd;
                 }
+                // send the body
             }
-            // send the body
-            if (it->second._request._which_body == STR_BODY)
+            else if (it->second._request._which_body == STR_BODY)
             {
-                std::string to_sind;
-                if (it->second._request._is_cgi)
-                    to_sind = it->second._request._cgi_response;
-                else
-                    to_sind = it->second._request._response_body;
-                if (send(client_socket, to_sind.c_str(), to_sind.length(), 0) == -1)
+                std::string to_send = it->second._request._response_body;
+                if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
                 {
                     perror("send");
                     exit (1);
@@ -279,7 +276,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 }
                 else if (bytesRead < 0)
                 {
-                    perror("read");
+                    perror("read response body file in the response");
                     exit (1);
                 }
                 else
