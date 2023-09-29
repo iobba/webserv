@@ -485,6 +485,8 @@ int    Request::GET_directory()
 {
     if (this->_response_body_file[this->_response_body_file.length() - 1] != '/')
     {
+        if (this->_method = DELETE)
+            throw HTTPException(409);
         this->_path += "/";
         this->_response_body_file = this->_path;
         throw HTTPException(301);
