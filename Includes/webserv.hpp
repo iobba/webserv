@@ -98,6 +98,7 @@ long unsigned int           get_file_len(std::string file__name);
 std::string                 get_file_extention(std::string file_name);
 void                        clear_and_replace(std::string file_name, std::string new_content);
 std::string                 get_conetnt_type(std::string to_find, int i);
+std::string                 generate_html_page_dir(std::string dir_path);
 int                         delete_directory_contents(std::string path);
 
 #endif

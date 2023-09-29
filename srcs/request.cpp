@@ -473,7 +473,6 @@ int    Request::GET_directory()
     }
     if (this->_serving_location.get_index() != "")
     {
-        // find if it is necessery to concate the index's path with the root
         this->_response_body_file = this->_serving_location.get_index();
         return (1);
     }
@@ -482,24 +481,7 @@ int    Request::GET_directory()
         if (this->_method == GET && this->_serving_location.is_autoindex()) // only GET
         {
             // generate an HTML page listing the contents of a directory
-            DIR* dir = opendir(this->_response_body_file.c_str());
-            if (dir == NULL)
-            {
-                std::cerr << "Failed to open directory, in opendir(autoindex)" << std::endl;
-                throw HTTPException(500);
-            }
-            std::string html_content  = "<html><body><h1>Directory Listing</h1><ul>";
-            struct dirent* entry;
-            while ((entry = readdir(dir)) != NULL)
-            {
-                // skip . and ..
-                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                    continue;
-                html_content += "<li><a href=\"" + std::string(entry->d_name) + "\">" + std::string(entry->d_name) + "</a></li>";
-            }
-            html_content += "</ul></body></html>";
-            closedir(dir);
-            this->_response_body = html_content;
+            this->_response_body = generate_html_page_dir(this->_response_body_file);
             this->_which_body = STR_BODY;
             throw HTTPException(200);
         }
@@ -765,6 +747,14 @@ void    Request::recv_cgi_response(int cgi_pipe[])
         cgi_return.append(buffer, bytes_read);
     }
     close(cgi_pipe[0]);
+    set_cgi_headers(cgi_return);
+    std::cout << "cgiiiiiiiiiiiiii response [" << this->_cgi_response << "]\n";
+    this->_which_body = STR_BODY; // just for the flow
+    throw HTTPException(677173);
+}
+
+void    Request::set_cgi_headers(std::string cgi_return)
+{
     // status line
     size_t body_start = cgi_return.find("\r\n\r\n");
     if (body_start == std::string::npos)
@@ -817,7 +807,4 @@ void    Request::recv_cgi_response(int cgi_pipe[])
         this->_cgi_response += cgi_return.substr(body_start + 4);
     else
         this->_cgi_response += cgi_return;
-    std::cout << "cgiiiiiiiiiiiiii response [" << this->_cgi_response << "]\n";
-    this->_which_body = STR_BODY; // just for the flow
-    throw HTTPException(677173);
 }

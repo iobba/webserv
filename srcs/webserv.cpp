@@ -153,3 +153,25 @@ int delete_directory_contents(std::string path)
     closedir(dir);
     return (0);
 }
+
+std::string     generate_html_page_dir(std::string dir_path)
+{
+    DIR* dir = opendir(dir_path.c_str());
+    if (dir == NULL)
+    {
+        std::cerr << "Failed to open directory, in opendir(autoindex)" << std::endl;
+        throw HTTPException(500);
+    }
+    std::string html_content  = "<html><body><h1>Directory Listing</h1><ul>";
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        // skip . and ..
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+        html_content += "<li><a href=\"" + std::string(entry->d_name) + "\">" + std::string(entry->d_name) + "</a></li>";
+    }
+    html_content += "</ul></body></html>";
+    closedir(dir);
+    return (html_content);
+}
