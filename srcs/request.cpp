@@ -250,13 +250,9 @@ void    Request::analyze_headers()
         throw HTTPException(400);
     if (this->_method == POST)
     {
-        if (get_matched_location() == 0)
-            throw HTTPException(404);
-        // check return
-        if (check_return())
-            throw HTTPException(301);
+        make_location_ready(); // find Location
         if (this->_serving_location.is_upload() == false) // get_requested_resource
-            this->_body_ignored = true;
+        this->_body_ignored = true;
     }
 }
 
@@ -384,6 +380,17 @@ int     Request::get_error_code()
 ///////////// response //////////////////
 void    Request::build_response()
 {
+    // find Location
+    make_location_ready();
+    if (this->_method == GET || this->_method == POST)
+        GET_handler();
+    // else
+    //     DELETE_handler();
+    std::cout << "\nWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTF\n\n";
+}
+
+void    Request::make_location_ready()
+{
     if (get_matched_location() == 0)
         throw HTTPException(404);
     // check return
@@ -392,17 +399,6 @@ void    Request::build_response()
     // is allowed method
     if (this->_serving_location.is_allowed_method(this->_method_str) == false)
         throw HTTPException(405);
-    // max body size
-    if (_method == POST && get_file_len(this->_body_name) > this->_serving_location.get_client_max_body_size())
-        throw HTTPException(413);
-    // specify which method
-    if (this->_method == GET)
-        GET_handler();
-    else if (this->_method == POST)
-        POST_handler();
-    // else
-    //     DELETE_handler();
-    std::cout << "\nWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTF\n\n";
 }
 
 int Request::get_matched_location()
@@ -452,12 +448,6 @@ int     Request::check_return()
     return (0);
 }
 
-void    Request::POST_handler()
-{
-    this->_which_body = STR_BODY;
-    this->_response_body = "Hello world!";
-    throw HTTPException(200);
-}
 
 void    Request::GET_handler()
 {
@@ -507,7 +497,7 @@ int    Request::GET_directory()
     }
     else
     {
-        if (this->_serving_location.is_autoindex())
+        if (this->_method == GET && this->_serving_location.is_autoindex()) // only GET
         {
             // generate an HTML page listing the contents of a directory
             DIR* dir = opendir(this->_response_body_file.c_str());
@@ -551,13 +541,12 @@ void    Request::GET_file()
     }
     else
     {
-        std::cout << "fiiiiiiiiiiiiiiiiiiiiiiiiiiiiile\n";
-        this->_which_body = FILE_BODY;
+        if (this->_method == POST) // post
+            throw HTTPException(403);
+        this->_which_body = FILE_BODY; // get
         throw HTTPException(200);
     }
 }
-
-
 
 void    Request::set_response_headers(std::string _code_str)
 {

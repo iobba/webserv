@@ -74,13 +74,13 @@ class   Request
 
         ///////// response ////////
         void    build_response();
+        void    make_location_ready();
         int     get_matched_location();
         int     check_return();
         void    GET_handler();
         int     GET_directory();
         void    GET_file();
         void    DELETE_handler();
-        void    POST_handler();
         int     find_requested_file();
         void    set_response_headers(std::string _code_str);
         void    cgi_process(std::map<std::string,std::string>::iterator ext_found);
