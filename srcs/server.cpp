@@ -24,6 +24,7 @@ void        Server::errors_initialisation()
     _error_pages[404] = "/nfs/homes/iobba/Desktop/webserv/error_pages/404.html";
     _error_pages[405] = "/nfs/homes/iobba/Desktop/webserv/error_pages/405.html";
     _error_pages[408] = "/nfs/homes/iobba/Desktop/webserv/error_pages/408.html";
+    _error_pages[409] = "/nfs/homes/iobba/Desktop/webserv/error_pages/409.html";
     _error_pages[413] = "/nfs/homes/iobba/Desktop/webserv/error_pages/413.html";
     _error_pages[414] = "/nfs/homes/iobba/Desktop/webserv/error_pages/414.html";
     _error_pages[429] = "/nfs/homes/iobba/Desktop/webserv/error_pages/429.html";
@@ -48,6 +49,7 @@ void        Server::errors_initialisation()
     _error_messages[404] = "Not Found";
     _error_messages[405] = "Method Not Allowed";
     _error_messages[408] = "Request Timeout";
+    _error_messages[409] = "Conflict";
     _error_messages[413] = "Content Too Large";
     _error_messages[414] = "URI Too Long";
     _error_messages[429] = "Too Many Requests";
