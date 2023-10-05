@@ -624,13 +624,13 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
     if (pipe(cgi_pipe) == -1)
     {
         perror("pipe");
-        exit (1);
+        throw HTTPException(500);
     }
     pid_t _id = fork();
     if (_id == -1)
     {
         perror("fork");
-        exit (1);
+        throw HTTPException(500);
     }
     else if (_id == 0) // child
     {
@@ -640,6 +640,41 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         execute_cgi(ext_found);
     }
     // parent
+    close(cgi_pipe[1]);
+    int status;
+    pid_t result;
+
+    while (true)
+    {
+        result = waitpid(_id, &status, WNOHANG);
+        if (result == -1)
+        {
+            perror("waitpid");
+            throw HTTPException(500);
+        }
+        else if (result == 0)
+        {
+            // Child is still running
+            sleep(1); // Sleep for a while and check again
+        }
+        else
+        {
+            // Child process has exited
+            if (WIFEXITED(status))
+            {
+                // Child exited normally
+                int exitStatus = WEXITSTATUS(status);
+                std::cout << "Child process exited with status " << exitStatus << std::endl;
+            }
+            else if (WIFSIGNALED(status))
+            {
+                // Child was terminated by a signal
+                int termSignal = WTERMSIG(status);
+                std::cout << "Child process terminated by signal " << termSignal << std::endl;
+            }
+            break;
+        }
+    }
     recv_cgi_response(cgi_pipe);
 }
 
@@ -682,7 +717,6 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
 
 void    Request::recv_cgi_response(int cgi_pipe[])
 {
-    close(cgi_pipe[1]);
     char buffer[1024];
     ssize_t bytes_read;
     std::string cgi_body;

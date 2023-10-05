@@ -226,7 +226,9 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
                 {
                     perror("send");
-                    exit (1);
+                    it++;
+                    close_connection(client_socket);
+                    continue ;
                 }
                 it->second._first_send = false;
                 if (it->second._request._which_body == FILE_BODY)
@@ -247,7 +249,9 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
                 {
                     perror("send");
-                    exit (1);
+                    it++;
+                    close_connection(client_socket);
+                    continue ;
                 }
                 sending_done = true;
             }
