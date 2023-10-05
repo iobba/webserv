@@ -9,10 +9,18 @@ void signal_handler(int __sig)
     }
 }
 
+// void timeout_handler(int signal)
+// {
+//     (void) signal;
+//     std::cerr << "Child process execution timed out." << std::endl;
+//     throw HTTPException(408);
+// }
+
 int main(int ac, char **av)
 {
     std::signal(SIGINT, signal_handler);
     signal(SIGPIPE, SIG_IGN);
+    // signal(SIGALRM, timeout_handler);
     //num_files = 0;
     if (ac <= 2)
     {

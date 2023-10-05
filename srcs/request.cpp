@@ -626,6 +626,7 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         perror("pipe");
         throw HTTPException(500);
     }
+    //alarm(5);
     pid_t _id = fork();
     if (_id == -1)
     {
@@ -644,8 +645,13 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
     int status;
     pid_t result;
 
+    int sec_num = 0;
     while (true)
     {
+        if (sec_num >= 2)
+        {
+            kill(_id, SIGTERM);
+        }
         result = waitpid(_id, &status, WNOHANG);
         if (result == -1)
         {
@@ -660,9 +666,18 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         else
         {
             // Child process has exited
+            if (WIFSIGNALED(status))
+            {
+                // Child process was terminated by a signal
+                int signal_number = WTERMSIG(status);
+                if (signal_number == 15)
+                    throw HTTPException(408);
+            }
             break;
         }
+        sec_num++;
     }
+    //alarm(0);
     recv_cgi_response(cgi_pipe);
 }
 
