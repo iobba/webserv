@@ -655,7 +655,7 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         else if (result == 0)
         {
             // Child is still running
-            sleep(1); // Sleep for a while and check again
+            sleep(1); // Sleep for a while and check again (1s)
         }
         else
         {
