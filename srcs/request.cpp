@@ -660,18 +660,6 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         else
         {
             // Child process has exited
-            if (WIFEXITED(status))
-            {
-                // Child exited normally
-                int exitStatus = WEXITSTATUS(status);
-                std::cout << "Child process exited with status " << exitStatus << std::endl;
-            }
-            else if (WIFSIGNALED(status))
-            {
-                // Child was terminated by a signal
-                int termSignal = WTERMSIG(status);
-                std::cout << "Child process terminated by signal " << termSignal << std::endl;
-            }
             break;
         }
     }
