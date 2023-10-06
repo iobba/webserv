@@ -249,7 +249,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                         if (fd == -1)
                         {
                             std::cout << "infile in the response open error" << std::endl;
-                            exit (1);
+                            throw HTTPException(500);
                         }
                         it->second._request._response_fd = fd;
                     }
@@ -293,7 +293,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     else if (bytesRead < 0)
                     {
                         perror("read response body file in the response");
-                        exit (1);
+                        throw HTTPException(500);
                     }
                     else
                     {
