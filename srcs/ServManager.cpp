@@ -192,7 +192,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                     // std::cout << "Received request from client:\n" << bytes_read << std::endl;
                     // std::cout << "-----------------------------------------------\n";
                     it->second._request.request_analysis(buffer, bytes_read);
-                    if (it->second._request.is_reading_done())
+                    if (it->second._request.is_reading_done() )
                     {
                         // build the response ...
                         std::cout << "\n\n##########################################\n\n";
@@ -217,92 +217,125 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
         int client_socket = it->first;
         if (FD_ISSET(client_socket, tmp_writeset))
         {
-            bool sending_done = false;
-            std::cout << "response fd = " << it->first << std::endl;
-            if (it->second._first_send)
+            try 
             {
-                // send headers first
-                std::string headers = it->second._request._response_headers;
-                if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
+                if (it->second._request._is_cgi)
                 {
-                    perror("send");
-                    it++;
-                    close_connection(client_socket);
-                    continue ;
-                }
-                it->second._first_send = false;
-                if (it->second._request._which_body == FILE_BODY)
-                {
-                    int fd = open(it->second._request._response_body_file.c_str(), O_RDONLY);
-                    if (fd == -1)
+                    if (it->second._request._waiting_done == false)
+                        it->second._request.waiting_child();
+                    if (it->second._request._waiting_done == false)
                     {
-                        std::cout << "infile in the response open error" << std::endl;
-                        exit (1);
-                    }
-                    it->second._request._response_fd = fd;
+                        it++;
+                        continue ;
+                    } 
                 }
-                // send the body
-            }
-            else if (it->second._request._which_body == STR_BODY)
-            {
-                std::string to_send = it->second._request._response_body;
-                if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
+                bool sending_done = false;
+                std::cout << "response fd = " << it->first << std::endl;
+                if (it->second._first_send)
                 {
-                    perror("send");
-                    it++;
-                    close_connection(client_socket);
-                    continue ;
-                }
-                sending_done = true;
-            }
-            else if (it->second._request._which_body == FILE_BODY)
-            {
-                std::cout << "response headers :\n[ " << it->second._request._response_headers << "]\n";
-                std::cout << "11111111111111111\n"; 
-                // Read and send the file in chunks
-                int bufferSize = 1024;
-                char buffer[bufferSize]; // 1024
-                int bytesRead = read(it->second._request._response_fd, buffer, bufferSize);
-                if (bytesRead > 0)
-                {
-                    int bytes_sent = send(client_socket, buffer, bytesRead, 0);
-                    if (bytes_sent < 0)
+                    // send headers first
+                    std::string headers = it->second._request._response_headers;
+                    if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
                     {
                         perror("send");
                         it++;
                         close_connection(client_socket);
                         continue ;
                     }
-                    else
-                        it->second._sending_offset += bytes_sent;
-                    // if (it->second._sending_offset == get_file_len(it->second._request._response_body_file))
-                    //     sending_done = true;   q
+                    it->second._first_send = false;
+                    if (it->second._request._which_body == FILE_BODY)
+                    {
+                        int fd = open(it->second._request._response_body_file.c_str(), O_RDONLY);
+                        if (fd == -1)
+                        {
+                            std::cout << "infile in the response open error" << std::endl;
+                            exit (1);
+                        }
+                        it->second._request._response_fd = fd;
+                    }
+                    // send the body
                 }
-                else if (bytesRead < 0)
+                else if (it->second._request._which_body == STR_BODY)
                 {
-                    perror("read response body file in the response");
-                    exit (1);
+                    std::string to_send = it->second._request._response_body;
+                    if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
+                    {
+                        perror("send");
+                        it++;
+                        close_connection(client_socket);
+                        continue ;
+                    }
+                    sending_done = true;
+                }
+                else if (it->second._request._which_body == FILE_BODY)
+                {
+                    std::cout << "response headers :\n[ " << it->second._request._response_headers << "]\n";
+                    std::cout << "11111111111111111\n"; 
+                    // Read and send the file in chunks
+                    int bufferSize = 1024;
+                    char buffer[bufferSize]; // 1024
+                    int bytesRead = read(it->second._request._response_fd, buffer, bufferSize);
+                    if (bytesRead > 0)
+                    {
+                        int bytes_sent = send(client_socket, buffer, bytesRead, 0);
+                        if (bytes_sent < 0)
+                        {
+                            perror("send");
+                            it++;
+                            close_connection(client_socket);
+                            continue ;
+                        }
+                        else
+                            it->second._sending_offset += bytes_sent;
+                        // if (it->second._sending_offset == get_file_len(it->second._request._response_body_file))
+                        //     sending_done = true;   q
+                    }
+                    else if (bytesRead < 0)
+                    {
+                        perror("read response body file in the response");
+                        exit (1);
+                    }
+                    else
+                    {
+                        sending_done = true;
+                        close(it->second._request._response_fd);
+                    }
+                    std::cout << "number of sent data is : " << it->second._sending_offset << std::endl;
+                    std::cout << "2222222222222222222\n"; 
                 }
                 else
-                {
                     sending_done = true;
-                    close(it->second._request._response_fd);
+                if (sending_done)
+                {
+                    // clear the request and the response ...
+                    it->second._sending_offset = 0;
+                    it->second._first_send = true;
+                    Request  new_request;
+                    new_request._request_handler = it->second._request._request_handler;
+                    it->second._request = new_request;
+                    FD_SET(client_socket, &read_set);
+                    FD_CLR(client_socket, &write_set);
                 }
-                std::cout << "number of sent data is : " << it->second._sending_offset << std::endl;
-                std::cout << "2222222222222222222\n"; 
             }
-            else
-                sending_done = true;
-            if (sending_done)
+            catch(std::exception & e)
             {
-                // clear the request and the response ...
-                it->second._sending_offset = 0;
-                it->second._first_send = true;
-                Request  new_request;
-                new_request._request_handler = it->second._request._request_handler;
-                it->second._request = new_request;
-                FD_SET(client_socket, &read_set);
-                FD_CLR(client_socket, &write_set);
+                it->second._request._status_code = std::strtoul(e.what(), NULL, 10);
+                if (it->second._request._status_code == 677173)// CGI
+                {
+                    continue ;
+                }
+                if (it->second._request._status_code >= 400)
+                {
+                    it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
+                    it->second._request._which_body = FILE_BODY;
+                }
+                else if (it->second._request._status_code >= 300)
+                {
+                    std::string redirect_location = it->second._request._response_body_file;
+                    it->second._request._which_body = NONE;
+                }
+                it->second._request.set_response_headers(e.what());
+                continue ;
             }
         }
         it++;

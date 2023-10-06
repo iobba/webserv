@@ -42,7 +42,11 @@ class   Request
         std::string                         _response_headers;
         std::string                         _response_body_file;
         int                                 _response_fd;
+        // cgi
         bool                                _is_cgi;
+        bool                                _waiting_done;
+        int                                 _cgi_pipe[2];
+        pid_t                               _child_id;
 
         ////////// request ////////
         // the server which is gonna handle this request*
@@ -81,7 +85,8 @@ class   Request
         void    set_response_headers(std::string _code_str);
         void    cgi_process(std::map<std::string,std::string>::iterator ext_found);
         void    execute_cgi(std::map<std::string,std::string>::iterator ext_found);
-        void    recv_cgi_response(int cgi_pipe[]);
+        void    recv_cgi_response();
+        void    waiting_child();
         void    set_cgi_headers(std::string cgi_return);
         void    upload_body();
         void    uploading();

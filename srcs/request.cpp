@@ -27,6 +27,8 @@ Request::Request()
     _response_fd = -1;
     _is_cgi = false;
     _body_recieved_len = 0;
+    _waiting_done = false;
+    _child_id = 0;
 }
 
 void     Request::request_analysis(char buffer[], int bytes_read)
@@ -454,6 +456,7 @@ void    Request::GET_file()
         // and the _status_code depend on the cgi
         this->_is_cgi = true;
         cgi_process(ext_found);
+        waiting_child();
     }
     else
     {
@@ -495,6 +498,7 @@ int    Request::delete_directory()
                 // and the _status_code depend on the cgi
                 this->_is_cgi = true;
                 cgi_process(ext_found);
+                waiting_child();
             }
             else
                 throw HTTPException(403);
@@ -529,6 +533,7 @@ void    Request::delete_file()
         // and the _status_code depend on the cgi
         this->_is_cgi = true;
         cgi_process(ext_found);
+        waiting_child();
     }
     else
     {
@@ -620,66 +625,62 @@ void    Request::set_response_headers(std::string _code_str)
 
 void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_found)
 {
-    int cgi_pipe[2];
-    if (pipe(cgi_pipe) == -1)
+    if (pipe(this->_cgi_pipe) == -1)
     {
         perror("pipe");
         throw HTTPException(500);
     }
     //alarm(5);
-    pid_t _id = fork();
-    if (_id == -1)
+    this->_child_id = fork();
+    if (this->_child_id == -1)
     {
         perror("fork");
         throw HTTPException(500);
     }
-    else if (_id == 0) // child
+    else if (this->_child_id == 0) // child
     {
-        close(cgi_pipe[0]);
-        dup2(cgi_pipe[1], 1);
-        close(cgi_pipe[1]);
+        close(this->_cgi_pipe[0]);
+        dup2(this->_cgi_pipe[1], 1);
+        close(this->_cgi_pipe[1]);
         execute_cgi(ext_found);
     }
     // parent
-    close(cgi_pipe[1]);
+    close(this->_cgi_pipe[1]);
+    _waiting_done = false;
+}
+
+void   Request::waiting_child()
+{
     int status;
     pid_t result;
 
-    int sec_num = 0;
-    while (true)
+    result = waitpid(this->_child_id, &status, WNOHANG);
+    if (result == -1)
     {
-        if (sec_num >= 2)
+        perror("waitpid");
+        _waiting_done = true;
+        // throw HTTPException(500);
+    }
+    else if (result == 0)
+    {
+        // Child is still running
+    }
+    else
+    {
+        // kill(_id, SIGTERM);
+        // Child process has exited
+        if (WIFSIGNALED(status))
         {
-            kill(_id, SIGTERM);
+            // Child process was terminated by a signal
+            int signal_number = WTERMSIG(status);
+            if (signal_number == 15)
+                throw HTTPException(408);
         }
-        result = waitpid(_id, &status, WNOHANG);
-        if (result == -1)
-        {
-            perror("waitpid");
-            throw HTTPException(500);
-        }
-        else if (result == 0)
-        {
-            // Child is still running
-            sleep(1); // Sleep for a while and check again (1s)
-        }
-        else
-        {
-            // Child process has exited
-            if (WIFSIGNALED(status))
-            {
-                // Child process was terminated by a signal
-                int signal_number = WTERMSIG(status);
-                if (signal_number == 15)
-                    throw HTTPException(408);
-            }
-            break;
-        }
-        sec_num++;
+        recv_cgi_response();
+        _waiting_done = true;
     }
     //alarm(0);
-    recv_cgi_response(cgi_pipe);
-}
+} 
 
 void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_found)
 {
@@ -718,7 +719,7 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     exit (1);
 }
 
-void    Request::recv_cgi_response(int cgi_pipe[])
+void    Request::recv_cgi_response()
 {
     char buffer[1024];
     ssize_t bytes_read;
@@ -729,7 +730,7 @@ void    Request::recv_cgi_response(int cgi_pipe[])
     int premier_read = true;
     while (true)
     {
-        bytes_read = read(cgi_pipe[0], buffer, sizeof(buffer));
+        bytes_read = read(this->_cgi_pipe[0], buffer, sizeof(buffer));
         if (bytes_read < 0)
         {
             perror("read from pipe");
@@ -752,7 +753,7 @@ void    Request::recv_cgi_response(int cgi_pipe[])
         }
         write(fd_out, cgi_return.c_str(), cgi_return.length());
     }
-    close(cgi_pipe[0]);
+    close(this->_cgi_pipe[0]);
     close(fd_out);
     set_cgi_headers(cgi_returned_headers);
     std::cout << "cgiiiiiiiiiiiiii response [" << this->_response_headers << "]\n";
