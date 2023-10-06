@@ -47,6 +47,7 @@ class   Request
         bool                                _waiting_done;
         int                                 _cgi_pipe[2];
         pid_t                               _child_id;
+        std::time_t                         _child_start;
 
         ////////// request ////////
         // the server which is gonna handle this request*

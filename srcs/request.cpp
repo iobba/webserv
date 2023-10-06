@@ -29,6 +29,7 @@ Request::Request()
     _body_recieved_len = 0;
     _waiting_done = false;
     _child_id = 0;
+    _child_start = 0;
 }
 
 void     Request::request_analysis(char buffer[], int bytes_read)
@@ -644,6 +645,7 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         close(this->_cgi_pipe[1]);
         execute_cgi(ext_found);
     }
+    this->_child_start = std::time(NULL);
     // parent
     close(this->_cgi_pipe[1]);
     _waiting_done = false;
@@ -654,6 +656,9 @@ void   Request::waiting_child()
     int status;
     pid_t result;
 
+    std::time_t _noow_ = std::time(NULL);
+    if (_noow_ - this->_child_start >= 5) // 5s as timeout
+        kill(this->_child_id, SIGTERM);
     result = waitpid(this->_child_id, &status, WNOHANG);
     if (result == -1)
     {
