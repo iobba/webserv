@@ -691,8 +691,12 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
 {
     char* program_path = (char *)this->_response_body_file.c_str();
     char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
-    char* env[6];
-    // HTTP_COOKIE
+    char* env[7];
+    // Cookies
+    std::string cookie("HTTP_COOKIE=");
+    std::map<std::string, std::string>::iterator it0 = this->_headers_map.find("Cookie");
+    if (it0 != this->_headers_map.end())
+        cookie.append(it0->second);
     // content type FOR POST
     std::string content_type("CONTENT_TYPE=");
     std::map<std::string, std::string>::iterator it1 = this->_headers_map.find("Content-Type");
@@ -715,7 +719,8 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     env[2] = (char*)request_method.c_str();
     env[3] = (char*)script_filename.c_str(); // path to script
     env[4] = (char*)redirect_status.c_str();
-    env[5] = NULL;
+    env[5] = (char*)cookie.c_str();;
+    env[6] = NULL;
     // std::cout << "env variables:\n";
     // for (int i = 0; i < 6; i++)
     //     std::cout << "              " << env[i] << std::endl;
@@ -760,6 +765,7 @@ void    Request::recv_cgi_response()
     }
     close(this->_cgi_pipe[0]);
     close(fd_out);
+    std::cout << "cgi response {" << cgi_returned_headers << std::endl;
     set_cgi_headers(cgi_returned_headers);
     std::cout << "cgiiiiiiiiiiiiii response [" << this->_response_headers << "]\n";
     this->_which_body = FILE_BODY; // just for the flow
@@ -778,6 +784,14 @@ void    Request::set_cgi_headers(std::string cgi_return)
     }
     else
         this->_response_headers.append("HTTP/1.1 200 OK\r\n");
+    // cookies
+    found = cgi_return.find("Set-Cookie: ");
+    if (found != std::string::npos)
+    {
+        size_t cr_lf = cgi_return.find_first_of("\r\n", found);
+        this->_response_headers += cgi_return.substr(found, cr_lf - found);
+        this->_response_headers.append("\r\n");
+    }
     // content type
     this->_response_headers.append("Content-Type: ");
     std::string content_type;
