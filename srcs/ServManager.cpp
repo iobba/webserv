@@ -193,7 +193,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                     // std::cout << "-----------------------------------------------\n";
                     // std::cout << "buffer == " << buffer << std::endl;
                     it->second._request.request_analysis(buffer, bytes_read);
-                    if (it->second._request.is_reading_done() )
+                    if (it->second._request._reading_done)
                     {
                         // build the response ...
                         std::cout << "\n\n##########################################\n\n";

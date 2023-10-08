@@ -21,7 +21,6 @@ class   Request
         std::vector<char>                   _request_vec;
         bool                                _headers_finished;
         bool                                _parsing_done;
-        bool                                _reading_done;
         int                                 _error_code;
         bool                                _is_chunked;
         std::string                         _server_name;
@@ -32,6 +31,7 @@ class   Request
 
 
     public:
+        bool                                _reading_done;
         ////// response //////////
         Location                            _serving_location;    
         int                                 _status_code;
