@@ -192,6 +192,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                     // std::cout << "Received request from client:\n" << bytes_read << std::endl;
                     // std::cout << "-----------------------------------------------\n";
                     // std::cout << "buffer == " << buffer << std::endl;
+                    std::cout << "9999999999999999999999999999999999999999999\n";
                     it->second._request.request_analysis(buffer, bytes_read);
                     if (it->second._request._reading_done)
                     {
@@ -231,10 +232,10 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             catch(std::exception & e)
             {
                 it->second._request._status_code = std::strtoul(e.what(), NULL, 10);
-                std::cout <<  "aaaaaaaaa\n";
+                //std::cout <<  "aaaaaaaaa\n";
                 if (it->second._request._status_code == 677173)// CGI
                     continue ;
-                std::cout <<  "bbbbbbbbb\n";
+                //std::cout <<  "bbbbbbbbb\n";
                 if (it->second._request._status_code >= 400)
                 {
                     it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
@@ -245,7 +246,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     std::string redirect_location = it->second._request._response_body_file;
                     it->second._request._which_body = NONE;
                 }
-                std::cout << "gggggggggggggg\n";
+                // std::cout << "gggggggggggggg\n";
                 it->second._request.set_response_headers(e.what());
                 continue ;
             }
@@ -300,8 +301,8 @@ int    ServManager::send_response(int client_socket, Client &_client_)
     }
     else if (_client_._request._which_body == FILE_BODY)
     {
-        std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
-        std::cout << "11111111111111111\n"; 
+        //std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
+        //std::cout << "11111111111111111\n"; 
         int bufferSize = 1024;
         char buffer[bufferSize];
         int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
@@ -321,14 +322,19 @@ int    ServManager::send_response(int client_socket, Client &_client_)
             }
             else
                 _client_._sending_offset += bytes_sent;
+            if (_client_._sending_offset == get_file_len(_client_._request._response_body_file))
+            {
+                sending_done = true;
+                close(_client_._request._response_fd);
+            }
         }
         else
         {
             sending_done = true;
             close(_client_._request._response_fd);
         }
-        std::cout << "number of sent data is : " << _client_._sending_offset << std::endl;
-        std::cout << "2222222222222222222\n"; 
+        //std::cout << "number of sent data is : " << _client_._sending_offset << std::endl;
+        //std::cout << "2222222222222222222\n"; 
     }
     else
         sending_done = true;
@@ -347,7 +353,7 @@ void    ServManager::setup_after_sending(int client_socket, Client &_client_)
     Request  new_request;
     new_request._request_handler = _client_._request._request_handler;
     _client_._request = new_request;
-   // FD_SET(client_socket, &read_set);
+    FD_SET(client_socket, &read_set);
     FD_CLR(client_socket, &write_set);
 }
 
