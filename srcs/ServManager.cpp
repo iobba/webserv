@@ -170,8 +170,6 @@ int     ServManager::handle_request(fd_set *tmp_readset)
             memset(buffer, 0, sizeof(buffer));
             // std::cout << "recv fd = "  << client_socket << std::endl;
             ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-            // std::string body(buffer, bytes_read);
-            // std::string b  += body;
             if (bytes_read == -1)
             {
                 perror("recv");
@@ -235,7 +233,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
                     it->second._request._which_body = FILE_BODY;
                 }
-                std::cout << "gggggggggggggg\n";
                 it->second._request.set_response_headers(e.what());
                 continue ;
             }
