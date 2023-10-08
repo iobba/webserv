@@ -44,6 +44,7 @@ class   Request
         int                                 _response_fd;
         // cgi
         bool                                _is_cgi;
+        std::string                         _query_string;
         bool                                _waiting_done;
         int                                 _cgi_pipe[2];
         pid_t                               _child_id;

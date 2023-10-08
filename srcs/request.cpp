@@ -30,6 +30,7 @@ Request::Request()
     _waiting_done = false;
     _child_id = 0;
     _child_start = 0;
+    _query_string = "";
 }
 
 void     Request::request_analysis(char buffer[], int bytes_read)
@@ -292,6 +293,15 @@ void    Request::parse_method()
 
 void    Request::parse_path()
 {
+    size_t question_mark = this->_path.find("?");
+    if (question_mark != std::string::npos)
+    {
+        if (this->_path.length() >= question_mark + 2)
+            this->_query_string = this->_path.substr(question_mark + 1);
+        this->_path = this->_path.substr(0, question_mark);
+    }
+    else
+        this->_query_string = "";
     if (this->_path.length() > MAX_URI_length)
         throw HTTPException(414);
     size_t  two_points = this->_path.find("..");
@@ -683,7 +693,10 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
 {
     char* program_path = (char *)this->_response_body_file.c_str();
     char* const args[3] = {(char *)ext_found->second.c_str(), program_path, NULL};
-    char* env[7];
+    char* env[8];
+    // QUERY_STRING
+    std::string query_str("QUERY_STRING=");
+    query_str.append(this->_query_string);
     // Cookies
     std::string cookie("HTTP_COOKIE=");
     std::map<std::string, std::string>::iterator it0 = this->_headers_map.find("Cookie");
@@ -701,9 +714,9 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
         content_length.append(it1->second);
     // method, filename, _status
     std::string request_method("REQUEST_METHOD=");
-    request_method.append(this->_method_str.c_str());
+    request_method.append(this->_method_str);
     std::string script_filename("SCRIPT_FILENAME=");
-    script_filename.append(_response_body_file.c_str());
+    script_filename.append(this->_response_body_file);
     std::string redirect_status("REDIRECT_STATUS=");
     redirect_status.append("200");
     env[0] = (char*)content_type.c_str();
@@ -711,8 +724,9 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     env[2] = (char*)request_method.c_str();
     env[3] = (char*)script_filename.c_str(); // path to script
     env[4] = (char*)redirect_status.c_str();
-    env[5] = (char*)cookie.c_str();;
-    env[6] = NULL;
+    env[5] = (char*)cookie.c_str();
+    env[6] = (char*)query_str.c_str();
+    env[7] = NULL;
     if (execve(args[0], args, env) == -1)
     perror("execve");
     exit (1);
@@ -754,15 +768,18 @@ void    Request::recv_cgi_response()
     }
     close(this->_cgi_pipe[0]);
     close(fd_out);
-    std::cout << "cgi response {" << cgi_returned_headers << std::endl;
     set_cgi_headers(cgi_returned_headers);
     std::cout << "cgiiiiiiiiiiiiii response [" << this->_response_headers << "]\n";
-    this->_which_body = FILE_BODY; // just for the flow
+    this->_which_body = FILE_BODY;
     throw HTTPException(677173);
 }
 
 void    Request::set_cgi_headers(std::string cgi_return)
 {
+    // print everything retured from the cgi
+    std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+              << cgi_return
+              << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
     // status line
     size_t  found = cgi_return.find("HTTP/1.1");
     if (found != std::string::npos)

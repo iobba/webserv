@@ -170,6 +170,8 @@ int     ServManager::handle_request(fd_set *tmp_readset)
             memset(buffer, 0, sizeof(buffer));
             // std::cout << "recv fd = "  << client_socket << std::endl;
             ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+            // std::string body(buffer, bytes_read);
+            // std::string b  += body;
             if (bytes_read == -1)
             {
                 perror("recv");
@@ -189,6 +191,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                 {
                     // std::cout << "Received request from client:\n" << bytes_read << std::endl;
                     // std::cout << "-----------------------------------------------\n";
+                    // std::cout << "buffer == " << buffer << std::endl;
                     it->second._request.request_analysis(buffer, bytes_read);
                     if (it->second._request.is_reading_done() )
                     {
@@ -228,11 +231,21 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             catch(std::exception & e)
             {
                 it->second._request._status_code = std::strtoul(e.what(), NULL, 10);
+                std::cout <<  "aaaaaaaaa\n";
+                if (it->second._request._status_code == 677173)// CGI
+                    continue ;
+                std::cout <<  "bbbbbbbbb\n";
                 if (it->second._request._status_code >= 400)
                 {
                     it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
                     it->second._request._which_body = FILE_BODY;
                 }
+                else if (it->second._request._status_code >= 300)
+                {
+                    std::string redirect_location = it->second._request._response_body_file;
+                    it->second._request._which_body = NONE;
+                }
+                std::cout << "gggggggggggggg\n";
                 it->second._request.set_response_headers(e.what());
                 continue ;
             }
@@ -252,7 +265,7 @@ int    ServManager::send_response(int client_socket, Client &_client_)
             return(0);
     }
     bool sending_done = false;
-    std::cout << "response fd = " << client_socket << std::endl;
+    // std::cout << "response fd = " << client_socket << std::endl;
     if (_client_._first_send)
     {
         // send headers first
@@ -288,7 +301,7 @@ int    ServManager::send_response(int client_socket, Client &_client_)
     else if (_client_._request._which_body == FILE_BODY)
     {
         std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
-        std::cout << "11111111111111111\n";
+        std::cout << "11111111111111111\n"; 
         int bufferSize = 1024;
         char buffer[bufferSize];
         int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
@@ -303,7 +316,7 @@ int    ServManager::send_response(int client_socket, Client &_client_)
             if (bytes_sent < 0)
             {
                 perror("send");
-                // close(_client_._request._response_fd);
+                close(_client_._request._response_fd);
                 return(1);
             }
             else
