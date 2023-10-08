@@ -600,6 +600,7 @@ void    Request::set_response_headers(std::string _code_str)
         _response_headers += std::string("Content-Type:") + " ";
         _response_headers += get_conetnt_type(ext, 0) + "\r\n";
         std::stringstream ss;
+        std::cout << "heeeeeeeeeeeeeeeeere\n";
         ss << get_file_len(this->_response_body_file);
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += ss.str() + "\r\n";
@@ -657,7 +658,10 @@ void   Request::waiting_child()
 
     std::time_t _noow_ = std::time(NULL);
     if (_noow_ - this->_child_start >= 5) // 5s as timeout
+    {
         kill(this->_child_id, SIGTERM);
+        throw HTTPException(408);
+    }
     result = waitpid(this->_child_id, &status, WNOHANG);
     if (result == -1)
     {
@@ -665,23 +669,13 @@ void   Request::waiting_child()
         _waiting_done = true;
         // throw HTTPException(500);
     }
-    else if (result == 0)
-    {
-        // Child is still running
-    }
-    else
+    else if (result != 0)
     {
         // Child process has exited
-        if (WIFSIGNALED(status))
-        {
-            // Child process was terminated by a signal
-            int signal_number = WTERMSIG(status);
-            if (signal_number == 15)
-                throw HTTPException(408);
-        }
         recv_cgi_response();
         _waiting_done = true;
     }
+    // result == 0 ==> child still running
 } 
 
 void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_found)

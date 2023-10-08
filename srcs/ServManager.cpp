@@ -217,17 +217,21 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
         int client_socket = it->first;
         if (FD_ISSET(client_socket, tmp_writeset))
         {
+            std::cout << "response fd = " << client_socket << std::endl; 
             try 
             {
-                
+                if (send_response(it->first, it->second))
+                {
+                    it++;
+                    close_connection(client_socket);
+                    continue ;
+                }
             }
             catch(std::exception & e)
             {
                 it->second._request._status_code = std::strtoul(e.what(), NULL, 10);
                 if (it->second._request._status_code == 677173)// CGI
-                {
                     continue ;
-                }
                 if (it->second._request._status_code >= 400)
                 {
                     it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
@@ -238,6 +242,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     std::string redirect_location = it->second._request._response_body_file;
                     it->second._request._which_body = NONE;
                 }
+                std::cout << "gggggggggggggg\n";
                 it->second._request.set_response_headers(e.what());
                 continue ;
             }
@@ -247,20 +252,17 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
     return (0);
 }
 
-int    send_response(int client_socket, Client _client_)
+int    ServManager::send_response(int client_socket, Client &_client_)
 {
     if (_client_._request._is_cgi)
     {
         if (_client_._request._waiting_done == false)
             _client_._request.waiting_child();
         if (_client_._request._waiting_done == false)
-        {
-            it++;
-            retrun(1);
-        } 
+            return(0);
     }
     bool sending_done = false;
-    std::cout << "response fd = " << it->first << std::endl;
+    std::cout << "response fd = " << client_socket << std::endl;
     if (_client_._first_send)
     {
         // send headers first
@@ -268,9 +270,7 @@ int    send_response(int client_socket, Client _client_)
         if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
         {
             perror("send");
-            it++;
-            close_connection(client_socket);
-            retrun(1);
+            return(1);
         }
         _client_._first_send = false;
         if (_client_._request._which_body == FILE_BODY)
@@ -291,9 +291,7 @@ int    send_response(int client_socket, Client _client_)
         if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
         {
             perror("send");
-            it++;
-            close_connection(client_socket);
-            retrun(1);
+            return(1);
         }
         sending_done = true;
     }
@@ -301,9 +299,8 @@ int    send_response(int client_socket, Client _client_)
     {
         std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
         std::cout << "11111111111111111\n"; 
-        // Read and send the file in chunks
         int bufferSize = 1024;
-        char buffer[bufferSize]; // 1024
+        char buffer[bufferSize];
         int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
         if (bytesRead < 0)
         {
@@ -316,14 +313,11 @@ int    send_response(int client_socket, Client _client_)
             if (bytes_sent < 0)
             {
                 perror("send");
-                it++;
-                close_connection(client_socket);
-                retrun(1);
+                // close(_client_._request._response_fd);
+                return(1);
             }
             else
                 _client_._sending_offset += bytes_sent;
-            // if (_client_._sending_offset == get_file_len(_client_._request._response_body_file))
-            //     sending_done = true;   q
         }
         else
         {
@@ -338,15 +332,20 @@ int    send_response(int client_socket, Client _client_)
     if (sending_done)
     {
         // clear the request and the response ...
-        _client_._sending_offset = 0;
-        _client_._first_send = true;
-        Request  new_request;
-        new_request._request_handler = _client_._request._request_handler;
-        _client_._request = new_request;
-        FD_SET(client_socket, &read_set);
-        FD_CLR(client_socket, &write_set);
+        setup_after_sending(client_socket, _client_);
     }
     return (0);
+}
+
+void    ServManager::setup_after_sending(int client_socket, Client &_client_)
+{
+    _client_._sending_offset = 0;
+    _client_._first_send = true;
+    Request  new_request;
+    new_request._request_handler = _client_._request._request_handler;
+    _client_._request = new_request;
+    FD_SET(client_socket, &read_set);
+    FD_CLR(client_socket, &write_set);
 }
 
 int     ServManager::close_connection(int to_close)

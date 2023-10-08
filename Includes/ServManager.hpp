@@ -22,6 +22,8 @@ class   ServManager
         int     close_connection(int to_close);
         int     handle_request(fd_set *tmp_readset);
         int     handle_response(fd_set *tmp_writeset);
+        int     send_response(int client_socket, Client &_client_);
+        void    setup_after_sending(int client_socket, Client &_client_);
         int     launch_servers(std::vector<Server> _servers_);
         void    print_esrvers_map();
 
