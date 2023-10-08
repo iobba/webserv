@@ -631,7 +631,6 @@ void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_fou
         perror("pipe");
         throw HTTPException(500);
     }
-    //alarm(5);
     this->_child_id = fork();
     if (this->_child_id == -1)
     {
@@ -672,7 +671,6 @@ void   Request::waiting_child()
     }
     else
     {
-        // kill(_id, SIGTERM);
         // Child process has exited
         if (WIFSIGNALED(status))
         {
@@ -684,7 +682,6 @@ void   Request::waiting_child()
         recv_cgi_response();
         _waiting_done = true;
     }
-    //alarm(0);
 } 
 
 void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_found)
@@ -721,9 +718,6 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     env[4] = (char*)redirect_status.c_str();
     env[5] = (char*)cookie.c_str();;
     env[6] = NULL;
-    // std::cout << "env variables:\n";
-    // for (int i = 0; i < 6; i++)
-    //     std::cout << "              " << env[i] << std::endl;
     if (execve(args[0], args, env) == -1)
     perror("execve");
     exit (1);
