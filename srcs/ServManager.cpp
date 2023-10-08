@@ -347,7 +347,7 @@ void    ServManager::setup_after_sending(int client_socket, Client &_client_)
     Request  new_request;
     new_request._request_handler = _client_._request._request_handler;
     _client_._request = new_request;
-    FD_SET(client_socket, &read_set);
+   // FD_SET(client_socket, &read_set);
     FD_CLR(client_socket, &write_set);
 }
 

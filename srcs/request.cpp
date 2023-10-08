@@ -430,10 +430,11 @@ void    Request::GET_handler()
 
 int    Request::GET_directory()
 {
-    if (this->_response_body_file[this->_response_body_file.length() - 1] != '/')
+    // std::cout << "\e[1;32mURI: " << this->_path << "\e[0m" << std::endl;
+    if (this->_path[this->_path.length() - 1] != '/')
     {
         this->_path += "/";
-        this->_response_body_file = this->_path;
+        this->_returned_location = this->_path;
         throw HTTPException(301);
     }
     if (this->_serving_location.get_index() != "")
@@ -491,7 +492,7 @@ void    Request::DELETE_handler()
 
 int    Request::delete_directory()
 {
-    if (this->_response_body_file[this->_response_body_file.length() - 1] != '/')
+    if (this->_path[this->_path.length() - 1] != '/')
         throw HTTPException(409);
     // cgi + index = run, cgi + no_index = 403
     std::map<std::string,std::string> cgi_on = this->_serving_location.get_cgi_paths();
@@ -586,6 +587,8 @@ void    Request::set_response_headers(std::string _code_str)
     {
         _response_headers += std::string("Location:") + " ";
         _response_headers += this->_returned_location + "\r\n";
+        // std::cout << this->_returned_location << std::endl;
+        // exit(1);
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += std::string("0") + "\r\n";
     }
@@ -667,6 +670,7 @@ void   Request::waiting_child()
     pid_t result;
 
     std::time_t _noow_ = std::time(NULL);
+    // std::cout << "\e[1;32mnow: " << _noow_ << " " << this->_child_start << "\e[0m\n";
     if (_noow_ - this->_child_start >= 5) // 5s as timeout
     {
         kill(this->_child_id, SIGTERM);
