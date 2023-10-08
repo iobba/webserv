@@ -660,6 +660,7 @@ void   Request::waiting_child()
     if (_noow_ - this->_child_start >= 5) // 5s as timeout
     {
         kill(this->_child_id, SIGTERM);
+        _waiting_done = true;
         throw HTTPException(408);
     }
     result = waitpid(this->_child_id, &status, WNOHANG);
@@ -672,8 +673,8 @@ void   Request::waiting_child()
     else if (result != 0)
     {
         // Child process has exited
-        recv_cgi_response();
         _waiting_done = true;
+        recv_cgi_response();
     }
     // result == 0 ==> child still running
 } 
