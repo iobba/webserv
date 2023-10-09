@@ -223,7 +223,7 @@ void    Request::analyze_headers()
     {
         make_location_ready(); // find Location
         if (this->_serving_location.is_upload() == false) // get_requested_resource
-        this->_body_ignored = true;
+            this->_body_ignored = true;
     }
 }
 
