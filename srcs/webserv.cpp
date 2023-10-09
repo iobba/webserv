@@ -52,7 +52,7 @@ void clear_and_replace(std::string file_name, std::string new_content)
     output_file.close();
 }
 
-std::string get_conetnt_type(std::string to_find, int i)
+std::string get_content_type(std::string to_find, int i)
 {
     std::map<std::string, std::string> mime_types;
     mime_types[".html"] = "text/html";

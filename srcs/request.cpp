@@ -90,7 +90,7 @@ void    Request::request_parser()
             std::map<std::string, std::string>::iterator it3 = this->_headers_map.find("Content-Type");
             if (it3 != this->_headers_map.end())
                 file_type = it3->second;
-            std::string file_ext = get_conetnt_type(file_type, 1);
+            std::string file_ext = get_content_type(file_type, 1);
             this->_body_name = create_body(file_ext);
             this->_body_recieved_len = 0;
         }
@@ -611,7 +611,7 @@ void    Request::set_response_headers(std::string _code_str)
         else
             ext = ".txt"; 
         _response_headers += std::string("Content-Type:") + " ";
-        _response_headers += get_conetnt_type(ext, 0) + "\r\n";
+        _response_headers += get_content_type(ext, 0) + "\r\n";
         std::stringstream ss;
         std::cout << "heeeeeeeeeeeeeeeeere\n";
         ss << get_file_len(this->_response_body_file);
@@ -671,7 +671,7 @@ void   Request::waiting_child()
 
     std::time_t _noow_ = std::time(NULL);
     // std::cout << "\e[1;32mnow: " << _noow_ << " " << this->_child_start << "\e[0m\n";
-    if (_noow_ - this->_child_start >= 5) // 5s as timeout
+    if (_noow_ - this->_child_start >= 10) // 5s as timeout
     {
         kill(this->_child_id, SIGTERM);
         _waiting_done = true;

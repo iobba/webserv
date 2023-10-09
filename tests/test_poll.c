@@ -1,24 +1,30 @@
-#include <iostream>
-#include <map>
+#include <ncurses.h>
+#include <cstdlib>
+#include <csignal>
+
+// Signal handler function
+void sigintHandler(int signal) {
+    endwin(); // Restore terminal settings
+    std::exit(0); // Exit the program gracefully
+}
 
 int main() {
-    std::map<std::string, int> myMap;
-    
-    // Insert some key-value pairs into the map
-    myMap["apple"] = 5;
-    myMap["banana"] = 3;
-    myMap["cherry"] = 8;
-    
-    // Specify the key you want to remove
-    std::string keyToRemove = "banana";
-    
-    // Use the erase() method to remove the element
-    myMap.erase(keyToRemove);
-    
-    // Print the updated map
-    for (const auto& pair : myMap) {
-        std::cout << pair.first << ": " << pair.second << std::endl;
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+
+    printw("Press Ctrl-C to exit\n");
+    refresh();
+
+    // Register the SIGINT signal handler
+    std::signal(SIGINT, sigintHandler);
+
+    while (true) {
+        int ch = getch();
+        // Continue processing other keys if needed
     }
-    
+
+    endwin();
     return 0;
 }
