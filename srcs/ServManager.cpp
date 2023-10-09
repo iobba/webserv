@@ -96,12 +96,15 @@ void    ServManager::configure_servers(std::vector<Server> servers_vec)
         address.sin_addr.s_addr = inet_addr(server.get_host().c_str());
         unsigned long port_ = std::strtoul(server.get_port().c_str(), NULL, 10);
         address.sin_port = htons(port_);
+        std::cout << server.get_host() << "|" << server.get_port() << "|" << std::endl;
         memset(address.sin_zero, '\0', sizeof address.sin_zero);
         if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
             throw SERVER_Exception("setsockopt has failed !!");
         if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
         {
+            std::cout << server.get_host() << "|" << server.get_port() << "|" << std::endl;
             close(server_fd);
+            perror("bind");
             throw SERVER_Exception("failed to bind!!");
         }
         server.set_socket(server_fd);
