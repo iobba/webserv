@@ -166,47 +166,42 @@ int     ServManager::handle_request(fd_set *tmp_readset)
         int client_socket = it->first;
         if (FD_ISSET(client_socket, tmp_readset))
         {
-            char buffer[1000000]; // 1024
-            memset(buffer, 0, sizeof(buffer));
-            // std::cout << "recv fd = "  << client_socket << std::endl;
-            ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-            // std::string body(buffer, bytes_read);
-            // std::string b  += body;
-            if (bytes_read == -1)
-            {
-                perror("recv");
-                it++;
-                close_connection(client_socket);
-                continue ;
-            }
-            else if (bytes_read == 0)
+            if (read_request(client_socket, it->second))
             {
                 it++;
                 close_connection(client_socket);
                 continue ;
-            }
-            else
-            {
-                if (!is_favicon_ico(buffer))
-                {
-                    // std::cout << "Received request from client:\n" << bytes_read << std::endl;
-                    // std::cout << "-----------------------------------------------\n";
-                    // std::cout << "buffer == " << buffer << std::endl;
-                    std::cout << "9999999999999999999999999999999999999999999\n";
-                    it->second._request.request_analysis(buffer, bytes_read);
-                    if (it->second._request._reading_done)
-                    {
-                        // build the response ...
-                        std::cout << "\n\n##########################################\n\n";
-                        FD_CLR(client_socket, &read_set);
-                        FD_SET(client_socket, &write_set);
-                    }
-                }
-                ++it;
             }
         }
-        else 
-            ++it;
+        ++it;
+    }
+    return (0);
+}
+
+int     ServManager::read_request(int client_socket, Client &_client_)
+{
+    char buffer[1000000]; // 1024
+    memset(buffer, 0, sizeof(buffer));
+    // std::cout << "recv fd = "  << client_socket << std::endl;
+    ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_read == -1 || bytes_read == 0)
+    {
+        perror("recv");
+        return (1);
+    }
+    else if (!is_favicon_ico(buffer)) // i should handle the favicon case
+    {
+        // std::cout << "Received request from client:\n" << bytes_read << std::endl;
+        // std::cout << "-----------------------------------------------\n";
+        // std::cout << "buffer == " << buffer << std::endl;
+        std::cout << "9999999999999999999999999999999999999999999\n";
+        _client_._request.request_analysis(buffer, bytes_read);
+        if (_client_._request._reading_done) // build the response ...
+        {
+            std::cout << "\n\n##########################################\n\n";
+            FD_CLR(client_socket, &read_set);
+            FD_SET(client_socket, &write_set);
+        }
     }
     return (0);
 }
@@ -243,7 +238,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 }
                 else if (it->second._request._status_code >= 300)
                 {
-                    std::string redirect_location = it->second._request._response_body_file;
                     it->second._request._which_body = NONE;
                 }
                 // std::cout << "gggggggggggggg\n";
@@ -258,6 +252,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
 
 int    ServManager::send_response(int client_socket, Client &_client_)
 {
+    bool sending_done = false;
     if (_client_._request._is_cgi)
     {
         if (_client_._request._waiting_done == false)
@@ -265,98 +260,113 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         if (_client_._request._waiting_done == false)
             return(0);
     }
-    bool sending_done = false;
     // std::cout << "response fd = " << client_socket << std::endl;
-    if (_client_._first_send)
+    if (_client_._first_send) // send headers first
     {
-        // send headers first
-        std::string headers = _client_._request._response_headers;
-        if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
-        {
-            perror("send");
-            return(1);
-        }
-        _client_._first_send = false;
-        if (_client_._request._which_body == FILE_BODY)
-        {
-            int fd = open(_client_._request._response_body_file.c_str(), O_RDONLY);
-            if (fd == -1)
-            {
-                std::cout << "infile in the response open error" << std::endl;
-                throw HTTPException(500);
-            }
-            _client_._request._response_fd = fd;
-        }
-        // send the body
+        if (send_headers(client_socket, _client_))
+            return (1);
     }
-    else if (_client_._request._which_body == STR_BODY)
+    else if (_client_._request._which_body == STR_BODY) // send the body as string
     {
-        std::string to_send = _client_._request._response_body;
-        if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
-        {
-            perror("send");
-            return(1);
-        }
+        if (send_string(client_socket, _client_))
+            return (1);
         sending_done = true;
     }
-    else if (_client_._request._which_body == FILE_BODY)
+    else if (_client_._request._which_body == FILE_BODY) // send the body as file
     {
-        //std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
-        //std::cout << "11111111111111111\n"; 
-        int bufferSize = 1024;
-        char buffer[bufferSize];
-        int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
-        if (bytesRead < 0)
+        int check = send_file(client_socket, _client_);
+        if (check == 1)
+            return (1);
+        if (check == 2)
+            sending_done = true;
+    }
+    else // there is no body
+        sending_done = true;
+    if (sending_done) // clear the request and the response == keep the connection
+    {
+        setup_after_sending(client_socket, _client_);
+        // return (1); this is for closing the connection instead of keeping it and clear the request ...
+    }
+    return (0);
+}
+
+int    ServManager::send_headers(int client_socket, Client &_client_)
+{
+    std::string headers = _client_._request._response_headers;
+    if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
+    {
+        perror("send");
+        return(1);
+    }
+    _client_._first_send = false;
+    if (_client_._request._which_body == FILE_BODY)
+    {
+        int fd = open(_client_._request._response_body_file.c_str(), O_RDONLY);
+        if (fd == -1)
         {
-            perror("read response body file in the response");
+            std::cout << "infile in the response open error" << std::endl;
             throw HTTPException(500);
         }
-        else if (bytesRead > 0)
+        _client_._request._response_fd = fd;
+    }
+    return (0);
+}
+
+int    ServManager::send_string(int client_socket, Client &_client_)
+{
+    std::string to_send = _client_._request._response_body;
+    if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
+    {
+        perror("send");
+        return(1);
+    }
+    return (0);
+}
+
+int    ServManager::send_file(int client_socket, Client &_client_)
+{
+    //std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
+    //std::cout << "11111111111111111\n"; 
+    int bufferSize = 1024;
+    char buffer[bufferSize];
+    int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
+    if (bytesRead < 0)
+    {
+        perror("read response body file in the response");
+        throw HTTPException(500);
+    }
+    else if (bytesRead > 0)
+    {
+        int bytes_sent = send(client_socket, buffer, bytesRead, 0);
+        if (bytes_sent < 0)
         {
-            int bytes_sent = send(client_socket, buffer, bytesRead, 0);
-            if (bytes_sent < 0)
-            {
-                perror("send");
-                close(_client_._request._response_fd);
-                return(1);
-            }
-            else
-                _client_._sending_offset += bytes_sent;
-            if (_client_._sending_offset == get_file_len(_client_._request._response_body_file))
-            {
-                sending_done = true;
-                close(_client_._request._response_fd);
-            }
+            perror("send");
+            close(_client_._request._response_fd);
+            return(1);
         }
         else
-        {
-            sending_done = true;
-            close(_client_._request._response_fd);
-        }
-        //std::cout << "number of sent data is : " << _client_._sending_offset << std::endl;
-        //std::cout << "2222222222222222222\n"; 
+            _client_._sending_offset += bytes_sent;
     }
-    else
-        sending_done = true;
-    if (sending_done)
+    else // bytesRead = 0 ==> all the file has been sent
     {
-        // clear the request and the response ...
-        // setup_after_sending(client_socket, _client_);
-        return (1);
+        close(_client_._request._response_fd);
+        return (2);
     }
+    //std::cout << "number of sent data is : " << _client_._sending_offset << std::endl;
+    //std::cout << "2222222222222222222\n"; 
     return (0);
 }
 
 void    ServManager::setup_after_sending(int client_socket, Client &_client_)
 {
+    FD_SET(client_socket, &read_set);
+    FD_CLR(client_socket, &write_set);
     _client_._sending_offset = 0;
     _client_._first_send = true;
     Request  new_request;
     new_request._request_handler = _client_._request._request_handler;
     _client_._request = new_request;
-    std::cout << "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\n";
-    FD_SET(client_socket, &read_set);
-    FD_CLR(client_socket, &write_set);
+    // std::cout << "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\n";
 }
 
 int     ServManager::close_connection(int to_close)
