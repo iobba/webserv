@@ -287,8 +287,8 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         sending_done = true;
     if (sending_done) // clear the request and the response == keep the connection
     {
-        setup_after_sending(client_socket, _client_);
-        // return (1); this is for closing the connection instead of keeping it and clear the request ...
+        // setup_after_sending(client_socket, _client_);
+        return (1); // this is for closing the connection instead of keeping it and clear the request ...
     }
     return (0);
 }
