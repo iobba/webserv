@@ -494,66 +494,25 @@ int    Request::delete_directory()
 {
     if (this->_path[this->_path.length() - 1] != '/')
         throw HTTPException(409);
-    // cgi + index = run, cgi + no_index = 403
-    std::map<std::string,std::string> cgi_on = this->_serving_location.get_cgi_paths();
-    if (!cgi_on.empty())
-    {
-        if (this->_serving_location.get_index() != "")
-        {
-            this->_response_body_file = this->_serving_location.get_index();
-            std::string file_ext = get_file_extention(this->_response_body_file);
-            std::map<std::string,std::string> ext_map = this->_serving_location.get_cgi_paths();
-            std::map<std::string,std::string>::iterator ext_found = ext_map.find(file_ext);
-            if (ext_found != ext_map.end())
-            {
-                // run cgi
-                // and the _status_code depend on the cgi
-                this->_is_cgi = true;
-                cgi_process(ext_found);
-                waiting_child();
-            }
-            else
-                throw HTTPException(403);
-        }
-        else
-            throw HTTPException(403);
-    }
+    int i = delete_directory_contents(this->_response_body_file);
+    if (i == 0)
+        throw HTTPException(204);
     else
     {
-        int i = delete_directory_contents(this->_response_body_file);
-        if (i == 0)
-            throw HTTPException(204);
+        if (access(this->_response_body_file.c_str(), W_OK) == 0)
+            throw HTTPException(500);
         else
-        {
-            if (access(this->_response_body_file.c_str(), W_OK) == 0)
-                throw HTTPException(500);
-            else
-                throw HTTPException(403);
-        }
+            throw HTTPException(403);
     }
     return (EXIT_SUCCESS);
 }
 
 void    Request::delete_file()
 {
-    std::string file_ext = get_file_extention(this->_response_body_file);
-    std::map<std::string,std::string> ext_map = this->_serving_location.get_cgi_paths();
-    std::map<std::string,std::string>::iterator ext_found = ext_map.find(file_ext);
-    if (ext_found != ext_map.end())
-    {
-        // run cgi
-        // and the _status_code depend on the cgi
-        this->_is_cgi = true;
-        cgi_process(ext_found);
-        waiting_child();
-    }
+    if (std::remove(this->_response_body_file.c_str()) == 0)
+        throw HTTPException(204);
     else
-    {
-        if (std::remove(this->_response_body_file.c_str()) == 0)
-            throw HTTPException(204);
-        else
-            throw HTTPException(500);
-    }
+        throw HTTPException(500);
 }
 
 int    Request::find_requested_file()
