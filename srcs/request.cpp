@@ -572,7 +572,7 @@ void    Request::set_response_headers(std::string _code_str)
         _response_headers += std::string("Content-Type:") + " ";
         _response_headers += get_content_type(ext, 0) + "\r\n";
         std::stringstream ss;
-        std::cout << "heeeeeeeeeeeeeeeeere\n";
+        // std::cout << "heeeeeeeeeeeeeeeeere\n";
         ss << get_file_len(this->_response_body_file);
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += ss.str() + "\r\n";
