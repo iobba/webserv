@@ -14,7 +14,7 @@ AR				= ar rc
 
 OBJS			= $(SRCS_ALL:.cpp=.o)
 
-BODY_FILES		= /nfs/sgoinfre/goinfre/Perso/iobba/*.txt
+BODY_FILES		= /Users/iobba/goinfre/*.txt
 
 all : $(NAME)
 

@@ -671,7 +671,7 @@ void   Request::waiting_child()
 
     std::time_t _noow_ = std::time(NULL);
     // std::cout << "\e[1;32mnow: " << _noow_ << " " << this->_child_start << "\e[0m\n";
-    if (_noow_ - this->_child_start >= 10) // 5s as timeout
+    if (_noow_ - this->_child_start >= 5) // 5s as timeout
     {
         kill(this->_child_id, SIGTERM);
         _waiting_done = true;

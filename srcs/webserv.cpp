@@ -186,7 +186,7 @@ int    create_file(std::string _ext_, std::string& naaaame)
     long unsigned int randooooooomNum = milliseconds + num_files;
     std::stringstream ss;
     ss << randooooooomNum;
-    std::string file_name = "/nfs/sgoinfre/goinfre/Perso/iobba/"; // path
+    std::string file_name = "/Users/iobba/goinfre/"; // path
     file_name += ss.str() + _ext_;
     // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
     int fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0777);
