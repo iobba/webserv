@@ -189,10 +189,10 @@ std::string    Request::create_body(std::string _ext_)
     std::string file_name = this->_serving_location.get_root(); // the root of the location where the upload gonna happen
     file_name += ss.str() + _ext_;
     // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
-    this->_uploaded_fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0777);
+    this->_uploaded_fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 777);
     if (this->_uploaded_fd == -1)
     {
-        std::cerr << "Failed to the uploaded file." << std::endl;
+        std::cerr << "Failed to open the uploaded file." << std::endl;
         throw HTTPException(500);
     }
     return (file_name);
@@ -471,7 +471,12 @@ void    Request::GET_file()
     else
     {
         if (this->_method == POST) // post
-            throw HTTPException(403);
+        {
+            if (this->_serving_location.is_upload())
+                throw HTTPException(201);
+            else
+                throw HTTPException(403);
+        } 
         this->_which_body = FILE_BODY; // get
         throw HTTPException(200);
     }
