@@ -494,7 +494,7 @@ int    Request::delete_directory()
 {
     if (this->_path[this->_path.length() - 1] != '/')
         throw HTTPException(409);
-    int i = delete_directory_contents(this->_response_body_file);
+    int i = std::system(("rm -r " + this->_response_body_file).c_str());
     if (i == 0)
         throw HTTPException(204);
     else
