@@ -28,7 +28,6 @@ class   ServManager
         int     send_headers(int client_socket, Client &_client_);
         int     send_string(int client_socket, Client &_client_);
         int     send_file(int client_socket, Client &_client_);
-        void    setup_after_sending(int client_socket, Client &_client_);
         int     launch_servers(std::vector<Server> _servers_);
         void    print_esrvers_map();
 

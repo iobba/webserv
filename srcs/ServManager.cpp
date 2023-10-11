@@ -208,6 +208,12 @@ int     ServManager::read_request(int client_socket, Client &_client_)
             FD_SET(client_socket, &write_set);
         }
     }
+    else
+    {
+        _client_._is_favicon = true;
+        FD_CLR(client_socket, &read_set);
+        FD_SET(client_socket, &write_set);
+    }
     return (0);
 }
 
@@ -232,10 +238,8 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             catch(std::exception & e)
             {
                 it->second._request._status_code = std::strtoul(e.what(), NULL, 10);
-                //std::cout <<  "aaaaaaaaa\n";
                 if (it->second._request._status_code == 677173)// CGI
                     continue ;
-                //std::cout <<  "bbbbbbbbb\n";
                 if (it->second._request._status_code >= 400)
                 {
                     it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
@@ -245,7 +249,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                 {
                     it->second._request._which_body = NONE;
                 }
-                // std::cout << "gggggggggggggg\n";
                 it->second._request.set_response_headers(e.what());
                 continue ;
             }
@@ -258,6 +261,11 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
 int    ServManager::send_response(int client_socket, Client &_client_)
 {
     bool sending_done = false;
+    if (_client_._is_favicon)
+    {
+        _client_._is_favicon = false;
+        throw HTTPException(404);
+    }
     if (_client_._request._is_cgi)
     {
         if (_client_._request._waiting_done == false)
@@ -287,11 +295,10 @@ int    ServManager::send_response(int client_socket, Client &_client_)
     }
     else // there is no body
         sending_done = true;
-    if (sending_done) // clear the request and the response == keep the connection
+    if (sending_done)
     {
         std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n"; 
-        setup_after_sending(client_socket, _client_);
-        // return (1); // this is for closing the connection instead of keeping it and clear the request ...
+        return (1);
     }
     return (0);
 }
@@ -361,21 +368,6 @@ int    ServManager::send_file(int client_socket, Client &_client_)
     //std::cout << "number of sent data is : " << _client_._sending_offset << std::endl;
     //std::cout << "2222222222222222222\n"; 
     return (0);
-}
-
-void    ServManager::setup_after_sending(int client_socket, Client &_client_)
-{
-    FD_CLR(client_socket, &write_set);
-    FD_SET(client_socket, &read_set);
-    Client new_client;
-    new_client.set_socket(client_socket);
-    new_client._request._request_handler = _client_._request._request_handler;
-    this->_clients_map[client_socket] = new_client;
-    // _client_._sending_offset = 0;
-    // _client_._first_send = true;
-    // Request  new_request;
-    // _client_._request = new_request;
-    // std::cout << "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\n";
 }
 
 int     ServManager::close_connection(int to_close)

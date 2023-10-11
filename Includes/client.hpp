@@ -11,7 +11,7 @@ class   Client
         // ... other info
 
     public:
-
+        bool        _is_favicon;
         Request     _request;
         bool        _first_send;
         unsigned long int _sending_offset;
