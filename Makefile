@@ -1,6 +1,6 @@
 PREFIX			= ./srcs/
 
-SRCS			= client.cpp main.cpp request.cpp response.cpp server.cpp ServManager.cpp webserv.cpp parseconfig.cpp Location.cpp
+SRCS			= client.cpp main.cpp request.cpp server.cpp ServManager.cpp webserv.cpp parseconfig.cpp Location.cpp
 
 SRCS_ALL		= $(addprefix $(PREFIX), $(SRCS))
 

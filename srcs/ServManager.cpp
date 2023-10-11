@@ -24,6 +24,7 @@ int ServManager::launch_servers(std::vector<Server> _servers_)
         std::cout << "CONFIGURING SERVER ERROR : " << e.what() << std::endl;
         exit (1);
     }
+    nb_req = 0;
     print_esrvers_map();
     std::cout << "Server is listening for connections on port 8008..." << std::endl;
     while (true)
@@ -175,6 +176,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                 close_connection(client_socket);
                 continue ;
             }
+            nb_req++;
         }
         ++it;
     }
@@ -287,8 +289,9 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         sending_done = true;
     if (sending_done) // clear the request and the response == keep the connection
     {
-        // setup_after_sending(client_socket, _client_);
-        return (1); // this is for closing the connection instead of keeping it and clear the request ...
+        std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n"; 
+        setup_after_sending(client_socket, _client_);
+        // return (1); // this is for closing the connection instead of keeping it and clear the request ...
     }
     return (0);
 }
@@ -362,13 +365,16 @@ int    ServManager::send_file(int client_socket, Client &_client_)
 
 void    ServManager::setup_after_sending(int client_socket, Client &_client_)
 {
-    FD_SET(client_socket, &read_set);
     FD_CLR(client_socket, &write_set);
-    _client_._sending_offset = 0;
-    _client_._first_send = true;
-    Request  new_request;
-    new_request._request_handler = _client_._request._request_handler;
-    _client_._request = new_request;
+    FD_SET(client_socket, &read_set);
+    Client new_client;
+    new_client.set_socket(client_socket);
+    new_client._request._request_handler = _client_._request._request_handler;
+    this->_clients_map[client_socket] = new_client;
+    // _client_._sending_offset = 0;
+    // _client_._first_send = true;
+    // Request  new_request;
+    // _client_._request = new_request;
     // std::cout << "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\n";
 }
 

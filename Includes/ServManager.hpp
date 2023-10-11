@@ -15,6 +15,7 @@ class   ServManager
         int                     max_Fd;
 
     public:
+        int nb_req;
         ServManager();
         void    configure_servers(std::vector<Server> servers_vec); /// this should setup all the serv_sockets 
         void    setup_sets();

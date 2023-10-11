@@ -3,7 +3,6 @@
 
 #include "webserv.hpp"
 #include "request.hpp"
-#include "response.hpp"
 
 class   Client
 {
@@ -14,7 +13,6 @@ class   Client
     public:
 
         Request     _request;
-        Response    _response;
         bool        _first_send;
         unsigned long int _sending_offset;
 
