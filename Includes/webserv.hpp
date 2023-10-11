@@ -34,7 +34,7 @@
 #include <sys/wait.h>
 
 # define PORT "3490"  // the port users will be connecting to
-# define BACKLOG 10   // how many pending connections queue will hold
+# define BACKLOG 100   // how many pending connections queue will hold
 # define BUFFER_SIZE 1024 // Size of the buffer to read incoming data
 # define MAX_URI_length 50
 # define MAX_BODY_SIZE 100000000 // this value not correct, cuz it should be taken from the config file 
