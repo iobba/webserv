@@ -228,7 +228,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
             // std::cout << "response fd = " << client_socket << std::endl; 
             try 
             {
-                std::cout << "111111111111\n";
                 if (send_response(it->first, it->second))
                 {
                     it++;
@@ -262,13 +261,11 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
 int    ServManager::send_response(int client_socket, Client &_client_)
 {
     bool sending_done = false;
-    std::cout << "222222222222\n";
     if (_client_._is_favicon)
     {
         _client_._is_favicon = false;
         throw HTTPException(404);
     }
-    std::cout << "333333333333\n";
     if (_client_._request._is_cgi)
     {
         if (_client_._request._waiting_done == false)
@@ -276,11 +273,9 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         if (_client_._request._waiting_done == false)
             return(0);
     }
-    std::cout << "4444444444444\n";
     // std::cout << "response fd = " << client_socket << std::endl;
     if (_client_._first_send) // send headers first
     {
-        std::cout << "55555555555555\n";
         if (send_headers(client_socket, _client_))
             return (1);
     }
@@ -292,7 +287,6 @@ int    ServManager::send_response(int client_socket, Client &_client_)
     }
     else if (_client_._request._which_body == FILE_BODY) // send the body as file
     {
-        std::cout << "666666666666666\n";
         int check = send_file(client_socket, _client_);
         if (check == 1)
             return (1);
@@ -303,15 +297,12 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         sending_done = true;
     if (sending_done)
     {
-        std::cout << "777777777777777\n";
         if (_client_._request._method == POST && _client_._request._serving_location.is_upload() == false)
         {
-            std::cout << "8888888888888888\n";
             if (unlink(_client_._request._body_name.c_str()) != 0)
             {
                 std::cout << "ERROR while deleting the uploaded file\n";
             }
-            std::cout << "9999999999999999\n";
         }
         std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n"; 
         return (1);
