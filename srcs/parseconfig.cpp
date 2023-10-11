@@ -65,22 +65,6 @@ void    ParseConfig::read_config(std::string __path)
         throw CONFIGException("invalid config file!");
 }
 
-int     which_type(std::string  pa_th)
-{
-    // to check if it's a file or directory or ...
-    struct stat path_info;
-    if (stat(pa_th.c_str(), &path_info) == 0)
-    {
-        if (S_ISREG(path_info.st_mode))
-            return (0);
-        else if(S_ISDIR(path_info.st_mode))
-            return (1);  
-        else
-            return (2);
-    }
-    return (3);
-}
-
 void    ParseConfig::clean_content()
 {
     // comments

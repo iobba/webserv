@@ -126,13 +126,29 @@ long unsigned int     get_file_len(std::string file__name)
     return (__len);
 }
 
+int     which_type(std::string  pa_th)
+{
+    // to check if it's a file or directory or ...
+    struct stat path_info;
+    if (stat(pa_th.c_str(), &path_info) == 0)
+    {
+        if (S_ISREG(path_info.st_mode))
+            return (0);
+        else if(S_ISDIR(path_info.st_mode))
+            return (1);  
+        else
+            return (2);
+    }
+    return (3);
+}
+
 int delete_directory_contents(std::string path)
 {
     DIR* dir = opendir(path.c_str());
     if (!dir)
     {
         std::cerr << "Error opening directory" << std::endl;
-        return (1);
+        throw HTTPException(404);
     }
 
     dirent* entry;
@@ -143,14 +159,25 @@ int delete_directory_contents(std::string path)
             if (path[path.length() - 1] != '/')
                 path.append("/");
             std::string full_path = path + entry->d_name;
-            if (unlink(full_path.c_str()) == -1)
+            if (access(full_path.c_str(), W_OK) != 0) // write access
+                throw HTTPException(403);
+            int dir_or_file = which_type(full_path);
+            if (dir_or_file == 0) // file
             {
-                std::cerr << "Error deleting file: " << full_path << std::endl;
-                return (1);
+                if (unlink(full_path.c_str()) != 0)
+                    throw HTTPException(500);
             }
+            else if (dir_or_file == 1) // directory
+            {
+                delete_directory_contents(full_path);
+            }
+            else // Unknown type
+                throw HTTPException(500);
         }
     }
     closedir(dir);
+    if (rmdir(path.c_str()) != 0)
+        throw HTTPException(500);
     return (0);
 }
 

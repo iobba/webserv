@@ -113,7 +113,7 @@ void    Request::upload_body()
         {
             close (this->_uploaded_fd);
             this->_which_body = NONE;
-            throw HTTPException(201);
+            this->_reading_done = true;
         }
         if (this->_body_length < this->_body_recieved_len)
         {
@@ -140,7 +140,7 @@ void    Request::uploading()
         {
             this->_which_body = NONE;
             close (this->_uploaded_fd);
-            throw HTTPException(201);
+            this->_reading_done = true;
         }
         if (this->_body.length() - (cr_lf + 2) >= _chunk_len + 2)
         {
@@ -222,8 +222,6 @@ void    Request::analyze_headers()
     if (this->_method == POST)
     {
         make_location_ready(); // find Location
-        if (this->_serving_location.is_upload() == false) // get_requested_resource
-            this->_body_ignored = true;
     }
 }
 
@@ -494,22 +492,17 @@ int    Request::delete_directory()
 {
     if (this->_path[this->_path.length() - 1] != '/')
         throw HTTPException(409);
-    int i = std::system(("rm -r " + this->_response_body_file).c_str());
-    if (i == 0)
-        throw HTTPException(204);
-    else
-    {
-        if (access(this->_response_body_file.c_str(), W_OK) == 0)
-            throw HTTPException(500);
-        else
+    if (access(this->_response_body_file.c_str(), W_OK) != 0)
             throw HTTPException(403);
-    }
+    delete_directory_contents(this->_response_body_file);
     return (EXIT_SUCCESS);
 }
 
 void    Request::delete_file()
 {
-    if (std::remove(this->_response_body_file.c_str()) == 0)
+    if (access(this->_response_body_file.c_str(), W_OK) != 0)
+        throw HTTPException(403);
+    if (unlink(this->_response_body_file.c_str()) == 0)
         throw HTTPException(204);
     else
         throw HTTPException(500);
@@ -659,7 +652,20 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
     char* env[8];
     // QUERY_STRING
     std::string query_str("QUERY_STRING=");
-    query_str.append(this->_query_string);
+    if (this->_method == GET)
+    {
+        query_str.append(this->_query_string);
+    }
+    else if (this->_method == POST)
+    {
+        int fd = open(this->_body_name.c_str(), O_RDONLY);
+        if (fd == -1)
+        {
+            std::cout << "infile in cgi open error" << std::endl;
+            throw HTTPException(500);
+        }
+        dup2(fd, 0); // need checking
+    }
     // Cookies
     std::string cookie("HTTP_COOKIE=");
     std::map<std::string, std::string>::iterator it0 = this->_headers_map.find("Cookie");

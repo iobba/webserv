@@ -10,7 +10,6 @@ class   Request
     private:
         ////// request //////
         std::string                         _method_str;
-        int                                 _method;
         std::string                         _path;
         std::string                         _version;
         std::map<std::string, std::string>  _headers_map;
@@ -31,6 +30,7 @@ class   Request
 
 
     public:
+        int                                 _method;
         bool                                _reading_done;
         ////// response //////////
         Location                            _serving_location;    

@@ -297,6 +297,12 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         sending_done = true;
     if (sending_done)
     {
+        if (_client_._request._method == POST && _client_._request._serving_location.is_upload() == false)
+        {
+            _client_._request._serving_location.set_upload(std::string("off"));
+            if (unlink(_client_._request._body_name.c_str()) != 0)
+                throw HTTPException(500);
+        }
         std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n"; 
         return (1);
     }
