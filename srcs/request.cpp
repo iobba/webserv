@@ -627,8 +627,7 @@ void   Request::waiting_child()
     pid_t result;
 
     std::time_t _noow_ = std::time(NULL);
-    // std::cout << "\e[1;32mnow: " << _noow_ << " " << this->_child_start << "\e[0m\n";
-    if (_noow_ - this->_child_start >= CHILD_TIMEOUT) // 5s as timeout
+    if (_noow_ - this->_child_start >= CHILD_TIMEOUT)
     {
         kill(this->_child_id, SIGTERM);
         _waiting_done = true;
@@ -639,11 +638,9 @@ void   Request::waiting_child()
     {
         perror("waitpid");
         _waiting_done = true;
-        // throw HTTPException(500);
     }
-    else if (result != 0)
+    else if (result != 0) // Child process has finished
     {
-        // Child process has exited
         _waiting_done = true;
         if (WIFEXITED(status))
         {
