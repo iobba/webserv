@@ -37,6 +37,7 @@
 # define BACKLOG 100   // how many pending connections queue will hold
 # define BUFFER_SIZE 1024 // Size of the buffer to read incoming data
 # define MAX_URI_length 50
+# define CHILD_TIMEOUT 5
 # define MAX_BODY_SIZE 100000000 // this value not correct, cuz it should be taken from the config file 
 
 //extern long unsigned int num_files; // i am not sure if it is allowed to use a globale variable

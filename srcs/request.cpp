@@ -628,7 +628,7 @@ void   Request::waiting_child()
 
     std::time_t _noow_ = std::time(NULL);
     // std::cout << "\e[1;32mnow: " << _noow_ << " " << this->_child_start << "\e[0m\n";
-    if (_noow_ - this->_child_start >= 5) // 5s as timeout
+    if (_noow_ - this->_child_start >= CHILD_TIMEOUT) // 5s as timeout
     {
         kill(this->_child_id, SIGTERM);
         _waiting_done = true;
@@ -645,6 +645,18 @@ void   Request::waiting_child()
     {
         // Child process has exited
         _waiting_done = true;
+        if (WIFEXITED(status))
+        {
+            if (WEXITSTATUS(status) != 0)
+            {
+                printf("Child process exited with status: %d\n", WEXITSTATUS(status));
+                throw HTTPException(500);
+            }
+        } else if (WIFSIGNALED(status))
+        {
+            printf("Child process terminated by signal: %d\n", WTERMSIG(status));
+            throw HTTPException(500);
+        }
         recv_cgi_response();
     }
     // result == 0 ==> child still running
@@ -667,9 +679,10 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
         if (fd == -1)
         {
             std::cout << "infile in cgi open error" << std::endl;
-            throw HTTPException(500);
+            exit (1);
         }
         dup2(fd, 0); // need checking
+        close (fd);
     }
     // Cookies
     std::string cookie("HTTP_COOKIE=");

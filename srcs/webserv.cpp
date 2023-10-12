@@ -95,6 +95,7 @@ std::string get_content_type(std::string to_find, int i)
     mime_types[".py"] = "text/x-python";
     mime_types[".php"] = "application/x-php";
     mime_types[".sh"] = "application/x-shellscript";
+    mime_types[".form"] = "application/x-www-form-urlencoded";
 
     if (i == 0)
     {

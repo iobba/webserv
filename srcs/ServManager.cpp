@@ -196,9 +196,9 @@ int     ServManager::read_request(int client_socket, Client &_client_)
     }
     else if (!is_favicon_ico(buffer)) // i should handle the favicon case
     {
-        // std::cout << "Received request from client:\n" << bytes_read << std::endl;
-        // std::cout << "-----------------------------------------------\n";
-        // std::cout << "buffer == " << buffer << std::endl;
+        std::cout << "Received request from client:\n" << bytes_read << std::endl;
+        std::cout << "-----------------------------------------------\n";
+        std::cout << "buffer == " << buffer << std::endl;
         std::cout << "9999999999999999999999999999999999999999999\n";
         _client_._request.request_analysis(buffer, bytes_read);
         if (_client_._request._reading_done) // build the response ...
