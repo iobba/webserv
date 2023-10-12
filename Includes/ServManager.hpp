@@ -9,6 +9,7 @@ class   ServManager
 {
     private:
         std::map<int, Server>   _servers_map;
+        std::vector<Server>     _all_servers;
         std::map<int, Client>   _clients_map;
         fd_set                  read_set;
         fd_set                  write_set;
@@ -18,6 +19,7 @@ class   ServManager
         int nb_req;
         ServManager();
         void    configure_servers(std::vector<Server> servers_vec); /// this should setup all the serv_sockets 
+        bool    is_old_server(Server to_check);
         void    setup_sets();
         int     handle_connections(fd_set *tmp_readset);
         int     close_connection(int to_close);

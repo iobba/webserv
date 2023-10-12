@@ -58,12 +58,25 @@ void    ServManager::print_esrvers_map()
 {
     std::map<int, Server>::iterator it = this->_servers_map.begin();
     int i = 1;
+    std::cout << "unique servers are :\n";
     while (it != this->_servers_map.end())
     {
         std::cout << "server " << i << " :\n";
         std::cout << "         + socket -------> " << it->first << std::endl;
         std::cout << "         + server_name --> " << it->second.get_server_name() << std::endl;
         it++;
+        i++;
+    }
+    
+    std::vector<Server>::iterator it1 = this->_all_servers.begin();
+    i = 1;
+    std::cout << "---------------------------------------\naaaaall servers are :\n";
+    while (it1 != this->_all_servers.end())
+    {
+        std::cout << "server " << i << " :\n";
+        std::cout << "         + socket -------> " << it1->get_socket() << std::endl;
+        std::cout << "         + server_name --> " << it1->get_server_name() << std::endl;
+        it1++;
         i++;
     }
 }
@@ -80,6 +93,31 @@ void    ServManager::set_maxFd(int biggest)
     this->max_Fd = biggest;
 }
 
+bool    ServManager::is_old_server(Server to_check)
+{
+    std::string s_host = to_check.get_host();
+    std::string s_port = to_check.get_port();
+    std::map<int, Server>::iterator it = this->_servers_map.begin();
+    int check = false;
+    while (it != this->_servers_map.end())
+    {
+        if (it->second.get_host() == s_host && it->second.get_port() == s_port)
+        {
+            check = true;
+            break ;
+        }
+        it++;
+    }
+    if (check)
+    {
+        to_check.set_socket(it->second.get_socket());
+        to_check.set_server_info(it->second.get_server_info());
+        this->_all_servers.push_back(to_check);
+        return (true);
+    }
+    return (false);
+}
+
 void    ServManager::configure_servers(std::vector<Server> servers_vec)
 {
     std::vector<Server>::iterator it = servers_vec.begin();
@@ -90,6 +128,11 @@ void    ServManager::configure_servers(std::vector<Server> servers_vec)
         struct sockaddr_in  address;
         int                 yes = 1;
 
+        if (is_old_server(server))
+        {
+            it++;
+            continue ;
+        }
         // Creating socket file descriptor
         if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
             throw SERVER_Exception("socket has failed : creating the socket for a server!!");
@@ -114,6 +157,7 @@ void    ServManager::configure_servers(std::vector<Server> servers_vec)
             throw SERVER_Exception("failed to listen !!");
         this->max_Fd = std::max(this->max_Fd, server_fd + 1);
         this->_servers_map.insert(std::make_pair(server.get_socket(), server));
+        this->_all_servers.push_back(server);
         it++;
     }
 }
@@ -152,7 +196,8 @@ int    ServManager::handle_connections(fd_set *tmp_readset)
             std::cout << "New connection accepted." << std::endl;
             _new_client.set_socket(cl_socket);
             // set the server which is gonna handle this request
-            _new_client._request._request_handler = it->second;
+            _new_client._request._default_server = it->second;
+            _new_client._request._all_servers = this->_all_servers;
             this->_clients_map.insert(std::make_pair(cl_socket, _new_client));
             FD_SET(cl_socket, &read_set);
             this->max_Fd = std::max(this->max_Fd, cl_socket + 1);
@@ -242,7 +287,7 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
                     continue ;
                 if (it->second._request._status_code >= 400)
                 {
-                    it->second._request._response_body_file = it->second._request._request_handler.get_error_page(it->second._request._status_code);
+                    it->second._request._response_body_file = it->second._request.server.get_error_page(it->second._request._status_code);
                     it->second._request._which_body = FILE_BODY;
                 }
                 else if (it->second._request._status_code >= 300)

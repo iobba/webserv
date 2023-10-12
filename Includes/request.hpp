@@ -52,7 +52,9 @@ class   Request
 
         ////////// request ////////
         // the server which is gonna handle this request*
-        Server                              _request_handler;
+        Server                              server;
+        Server                              _default_server;
+        std::vector<Server>                 _all_servers;
         std::string                         _body_name;
         std::string                         _cleaned_body_name;
         // func
@@ -65,6 +67,7 @@ class   Request
         void                parse_path();
         void                parse_version();
         void                analyze_headers();
+        void                set_perfect_server();
         int                 get_error_code();
         bool                _keep_connection();
         void                set_reading_done();

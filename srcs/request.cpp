@@ -52,7 +52,7 @@ void     Request::request_analysis(char buffer[], int bytes_read)
             return ;
         if (_status_code >= 400)
         {
-            this->_response_body_file = this->_request_handler.get_error_page(_status_code);
+            this->_response_body_file = this->server.get_error_page(_status_code);
             this->_which_body = FILE_BODY;
         }
         else if (_status_code >= 300)
@@ -123,7 +123,7 @@ void    Request::upload_body()
         this->_body = "";
     }
     // check the uploading file len
-    if (this->_body_recieved_len > this->_request_handler.get_client_max_body_size())
+    if (this->_body_recieved_len > this->server.get_client_max_body_size())
     {
         close (this->_uploaded_fd);
         throw HTTPException(413);
@@ -198,11 +198,31 @@ std::string    Request::create_body(std::string _ext_)
     return (file_name);
 }
 
+void    Request::set_perfect_server()
+{
+    std::vector<Server>::iterator it = this->_all_servers.begin();
+    while (it != this->_all_servers.end())
+    {
+        if (it->get_host() == this->_default_server.get_host()
+            && it->get_port() == this->_default_server.get_port()
+            && it->get_server_name() == this->_server_name)
+        {
+            this->server = *it;
+            return ;
+        }
+        it++;
+    }
+    this->server = this->_default_server;
+}
+
 void    Request::analyze_headers()
 {
     std::map<std::string, std::string>::iterator it1 = _headers_map.find("Host");
     if (it1 != _headers_map.end())
+    {
         this->_server_name = it1->second;
+        set_perfect_server();
+    }
     else
         throw HTTPException(400);
     std::map<std::string, std::string>::iterator it2 = _headers_map.find("Transfer-Encoding");
@@ -367,7 +387,7 @@ void    Request::make_location_ready()
 int Request::get_matched_location()
 {
     unsigned long int more_specified = 0;
-    std::vector<Location>  locations = _request_handler.get_locations();        
+    std::vector<Location>  locations = server.get_locations();        
     unsigned long int i = 0;
     while (i < locations.size())
     {
@@ -537,7 +557,7 @@ void    Request::set_response_headers(std::string _code_str)
     // status line 
     _response_headers += std::string("HTTP/1.1") + " ";
     _response_headers += _code_str + " ";
-    _response_headers += _request_handler.get_error_messages(_status_code) + "\r\n";
+    _response_headers += server.get_error_messages(_status_code) + "\r\n";
     // other headers ...
     // Content Type or Location and Content length
     if (this->_status_code >= 300 && this->_status_code < 400)
