@@ -520,6 +520,7 @@ int    Request::delete_directory()
     if (access(this->_response_body_file.c_str(), W_OK) != 0)
             throw HTTPException(403);
     delete_directory_contents(this->_response_body_file);
+    throw HTTPException(204);
     return (EXIT_SUCCESS);
 }
 
