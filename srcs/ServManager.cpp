@@ -342,7 +342,8 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         sending_done = true;
     if (sending_done)
     {
-        if (_client_._request._method == POST && _client_._request._serving_location.is_upload() == false)
+        if (_client_._request._method == POST
+            && (_client_._request._serving_location.is_upload() == false || _client_._request._status_code == 413))
         {
             if (unlink(_client_._request._body_name.c_str()) != 0)
             {

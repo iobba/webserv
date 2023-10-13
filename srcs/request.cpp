@@ -123,7 +123,7 @@ void    Request::upload_body()
         this->_body = "";
     }
     // check the uploading file len
-    if (this->_body_recieved_len > this->server.get_client_max_body_size())
+    if (this->_body_recieved_len > this->_serving_location.get_client_max_body_size())
     {
         close (this->_uploaded_fd);
         throw HTTPException(413);
@@ -462,7 +462,9 @@ int    Request::GET_directory()
     }
     else
     {
-        if (this->_method == GET && this->_serving_location.is_autoindex()) // only GET
+        if (this->_method == POST && this->_serving_location.is_upload())
+            throw HTTPException(201);
+        else if (this->_method == GET && this->_serving_location.is_autoindex()) // only GET
         {
             // generate an HTML page listing the contents of a directory
             this->_response_body = generate_html_page_dir(this->_response_body_file);
