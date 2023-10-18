@@ -31,18 +31,6 @@ void    ParseConfig::parsing_config(std::string  config_file)
         }
         it_1++;
     }
-
-    // print ...
-    // this->print_servers();
-    // print scopes
-    // it = servers_scopes.begin();
-    // int i = 0;
-    // for (; it != servers_scopes.end(); it++)
-    // {
-    //     std::cout << "scope " << i + 1 << " :\n";
-    //     std::cout << *it << "\n";
-    //     i++;
-    // }
 }
 
 void    ParseConfig::read_config(std::string __path)
@@ -200,7 +188,7 @@ void  ParseConfig::add_server(std::string server_scope)
         it++;
     }
     if (new_server.get_port() == "")
-        new_server.set_port("7777");
+        throw CONFIGException("the server should have a port");
     if (new_server.get_server_name() == "")
         throw CONFIGException("the server should have a server_name");
     if (new_server.get_host() == "")
