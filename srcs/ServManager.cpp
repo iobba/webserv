@@ -171,6 +171,7 @@ int    ServManager::handle_connections(fd_set *tmp_readset)
             // new client object
             Client      _new_client;
             int cl_socket = accept(it->first, NULL, NULL);
+            std::cout << "Fd : " << cl_socket << std::endl;
             if (cl_socket == -1)
             {
                 perror("accept");
@@ -399,9 +400,11 @@ int     ServManager::close_connection(int to_close)
         FD_CLR(to_close, &read_set);
     if (FD_ISSET(to_close, &write_set))
         FD_CLR(to_close, &write_set);
-    if (to_close + 1 == this->max_Fd)
+    if (to_close + 1 == this->max_Fd) {
         this->max_Fd--;
+    }
     close(to_close);
+
     this->_clients_map.erase(to_close);
     return (EXIT_SUCCESS);
 }

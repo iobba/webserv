@@ -414,6 +414,7 @@ int Request::get_matched_location()
         }
         i++;
     }
+    std::cout << "location root : " << this->_serving_location.get_root() << std::endl;
     return (more_specified);
 }
 
@@ -641,6 +642,7 @@ void   Request::waiting_child()
     if (_noow_ - this->_child_start >= CHILD_TIMEOUT)
     {
         kill(this->_child_id, SIGTERM);
+        waitpid(this->_child_id, NULL, 0);
         _waiting_done = true;
         throw HTTPException(408);
     }

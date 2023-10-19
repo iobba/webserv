@@ -189,8 +189,8 @@ void  ParseConfig::add_server(std::string server_scope)
     }
     if (new_server.get_port() == "")
         throw CONFIGException("the server should have a port");
-    if (new_server.get_server_name() == "")
-        throw CONFIGException("the server should have a server_name");
+    // if (new_server.get_server_name() == "")
+    //     throw CONFIGException("the server should have a server_name");
     if (new_server.get_host() == "")
         new_server.set_host("127.0.0.1");
     if (new_server.get_root() == "")
