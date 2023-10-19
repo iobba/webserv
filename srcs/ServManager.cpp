@@ -204,6 +204,7 @@ int     ServManager::handle_request(fd_set *tmp_readset)
                 continue ;
             }
             nb_req++;
+            std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n";
         }
         ++it;
     }
@@ -220,10 +221,10 @@ int     ServManager::read_request(int client_socket, Client &_client_)
         perror("recv");
         return (1);
     }
-    else if (!is_favicon_ico(buffer)) // i should handle the favicon case
+    else if (!is_favicon_ico(buffer))
     {
         _client_._request.request_analysis(buffer, bytes_read);
-        if (_client_._request._reading_done) // build the response ...
+        if (_client_._request._reading_done)
         {
             FD_CLR(client_socket, &read_set);
             FD_SET(client_socket, &write_set);
@@ -323,8 +324,7 @@ int    ServManager::send_response(int client_socket, Client &_client_)
             {
                 std::cout << "ERROR while deleting the uploaded file\n";
             }
-        }
-        std::cout << "\e[1;32mnumber of requests: " << nb_req << "\e[0m\n"; 
+        } 
         return (1);
     }
     return (0);
@@ -333,7 +333,8 @@ int    ServManager::send_response(int client_socket, Client &_client_)
 int    ServManager::send_headers(int client_socket, Client &_client_)
 {
     std::string headers = _client_._request._response_headers;
-    if (send(client_socket, headers.c_str(), headers.length(), 0) == -1)
+    int bytes_sent = send(client_socket, headers.c_str(), headers.length(), 0);
+    if (bytes_sent <= 0)
     {
         perror("send");
         return(1);
@@ -355,7 +356,8 @@ int    ServManager::send_headers(int client_socket, Client &_client_)
 int    ServManager::send_string(int client_socket, Client &_client_)
 {
     std::string to_send = _client_._request._response_body;
-    if (send(client_socket, to_send.c_str(), to_send.length(), 0) == -1)
+    int bytes_sent = send(client_socket, to_send.c_str(), to_send.length(), 0);
+    if (bytes_sent <= 0)
     {
         perror("send");
         return(1);
@@ -376,14 +378,12 @@ int    ServManager::send_file(int client_socket, Client &_client_)
     else if (bytesRead > 0)
     {
         int bytes_sent = send(client_socket, buffer, bytesRead, 0);
-        if (bytes_sent < 0)
+        if (bytes_sent <= 0)
         {
-            perror("send");
+            // perror("send");
             close(_client_._request._response_fd);
             return(1);
         }
-        else
-            _client_._sending_offset += bytes_sent;
     }
     else // bytesRead = 0 ==> all the file has been sent
     {
