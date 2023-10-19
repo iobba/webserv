@@ -21,9 +21,4 @@ class   ParseConfig
 		const std::vector<Server>&	get_servers();
 };
 
-
-
-
-
-
 #endif

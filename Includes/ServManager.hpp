@@ -16,9 +16,9 @@ class   ServManager
         int                     max_Fd;
 
     public:
-        int nb_req;
+        int     nb_req;
         ServManager();
-        void    configure_servers(std::vector<Server> servers_vec); /// this should setup all the serv_sockets 
+        void    configure_servers(std::vector<Server> servers_vec);
         bool    is_old_server(Server to_check);
         void    setup_sets();
         int     handle_connections(fd_set *tmp_readset);
@@ -35,12 +35,6 @@ class   ServManager
 
         // setters
         void    set_maxFd(int biggest);
-
 };
-
-
-
-
-
 
 #endif

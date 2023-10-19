@@ -33,14 +33,10 @@
 #include <iterator>
 #include <sys/wait.h>
 
-# define BACKLOG 100   // how many pending connections queue will hold
-# define BUFFER_SIZE 1024 // Size of the buffer to read incoming data
+# define BACKLOG 100
+# define BUFFER_SIZE 1024
 # define MAX_URI_length 50
 # define CHILD_TIMEOUT 5
-//extern long unsigned int num_files; // i am not sure if it is allowed to use a globale variable
-
-
-// possible requests
 # define GET 1
 # define POST 2
 # define DELETE 3
@@ -85,17 +81,13 @@ class SERVER_Exception : public std::exception
     ~SERVER_Exception() throw() {}
 };
 
-/// server ////
-int launch_server(void);
-
-// global functions
+int                         launch_server(void);
 int                         which_type(std::string  pa_th);
 std::vector<std::string>    split_to_lines(std::string all_scope);
 std::vector<std::string>    split_to_words(std::string line);
 int                         find_in_vector(std::vector<char> __vec, std::string to_find);
 long unsigned int           get_file_len(std::string file__name);
 std::string                 get_file_extention(std::string file_name);
-void                        clear_and_replace(std::string file_name, std::string new_content);
 std::string                 get_content_type(std::string to_find, int i);
 std::string                 generate_html_page_dir(std::string dir_path);
 int                         delete_directory_contents(std::string path);

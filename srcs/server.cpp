@@ -218,8 +218,6 @@ void   Server::add_location(std::string _path_, std::vector<std::string> lines)
         std::string __max = oss.str();
         new_location.set_client_max_body_size(__max);
     }
-    // u should check more if the location valid or not ...
-    // at the end
     this->_locations.push_back(new_location);
 }
 

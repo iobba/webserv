@@ -7,37 +7,16 @@
 class   Client
 {
     private:
-        int         _socket;
-        // ... other info
+        int                 _socket;
 
     public:
-        bool        _is_favicon;
-        Request     _request;
-        bool        _first_send;
-        unsigned long int _sending_offset;
+        bool                _is_favicon;
+        Request             _request;
+        bool                _first_send;
+        unsigned long int   _sending_offset;
 
-
-        // setters
-        void    set_socket(int socket);
-        // ...
-
-        // getters
-        const int& get_socket(void)     const;
-        // ...
-
-
-
-
+        void        set_socket(int socket);
+        const int&  get_socket(void)     const;
 };
-
-
-
-
-
-
-
-
-
-
 
 #endif

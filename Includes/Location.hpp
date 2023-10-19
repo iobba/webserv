@@ -42,8 +42,6 @@ class   Location
         const std::string&                          get_return() const;
         bool                                        is_allowed_method(std::string mthd) const;
         const std::map<std::string,std::string>&    get_cgi_paths() const;
-
-        
 };
 
 #endif

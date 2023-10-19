@@ -40,7 +40,6 @@ void     Request::request_analysis(char buffer[], int bytes_read)
     try
     {
         request_parser();
-        // print_request_parts(); // just to see the world
         if (this->_reading_done)
             build_response();
     }
@@ -188,7 +187,6 @@ std::string    Request::create_body(std::string _ext_)
     ss << randooooooomNum;
     std::string file_name = this->_serving_location.get_root(); // the root of the location where the upload gonna happen
     file_name += ss.str() + _ext_;
-    // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
     this->_uploaded_fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 777);
     if (this->_uploaded_fd == -1)
     {
@@ -369,7 +367,6 @@ void    Request::build_response()
         GET_handler();
     else
         DELETE_handler();
-    std::cout << "\nWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTF\n\n";
 }
 
 void    Request::make_location_ready()
@@ -448,7 +445,6 @@ void    Request::GET_handler()
 
 int    Request::GET_directory()
 {
-    // std::cout << "\e[1;32mURI: " << this->_path << "\e[0m" << std::endl;
     if (this->_path[this->_path.length() - 1] != '/')
     {
         this->_path += "/";
@@ -482,10 +478,8 @@ void    Request::GET_file()
     std::string file_ext = get_file_extention(this->_response_body_file);
     std::map<std::string,std::string> ext_map = this->_serving_location.get_cgi_paths();
     std::map<std::string,std::string>::iterator ext_found = ext_map.find(file_ext);
-    if (ext_found != ext_map.end())
+    if (ext_found != ext_map.end()) // run cgi
     {
-        // run cgi
-        // and the _status_code depend on the cgi
         this->_is_cgi = true;
         cgi_process(ext_found);
         waiting_child();
@@ -561,14 +555,11 @@ void    Request::set_response_headers(std::string _code_str)
     _response_headers += std::string("HTTP/1.1") + " ";
     _response_headers += _code_str + " ";
     _response_headers += server.get_error_messages(_status_code) + "\r\n";
-    // other headers ...
     // Content Type or Location and Content length
     if (this->_status_code >= 300 && this->_status_code < 400)
     {
         _response_headers += std::string("Location:") + " ";
         _response_headers += this->_returned_location + "\r\n";
-        // std::cout << this->_returned_location << std::endl;
-        // exit(1);
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += std::string("0") + "\r\n";
     }
@@ -593,7 +584,6 @@ void    Request::set_response_headers(std::string _code_str)
         _response_headers += std::string("Content-Type:") + " ";
         _response_headers += get_content_type(ext, 0) + "\r\n";
         std::stringstream ss;
-        // std::cout << "heeeeeeeeeeeeeeeeere\n";
         ss << get_file_len(this->_response_body_file);
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += ss.str() + "\r\n";
@@ -603,14 +593,12 @@ void    Request::set_response_headers(std::string _code_str)
         _response_headers += std::string("Content-Length:") + " ";
         _response_headers += std::string("0") + "\r\n";
     }
-    // Date if needed
     if (true)
     {
         std::time_t currentTime;
         std::time(&currentTime);
         char buffer[100];
         std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&currentTime));
-        // to string
         std::string date_str(buffer);
         _response_headers += std::string("Date:") + " ";
         _response_headers += date_str + "\r\n";
@@ -669,12 +657,12 @@ void   Request::waiting_child()
         {
             if (WEXITSTATUS(status) != 0)
             {
-                printf("Child process exited with status: %d\n", WEXITSTATUS(status));
+                // printf("Child process exited with status: %d\n", WEXITSTATUS(status));
                 throw HTTPException(500);
             }
         } else if (WIFSIGNALED(status))
         {
-            printf("Child process terminated by signal: %d\n", WTERMSIG(status));
+            // printf("Child process terminated by signal: %d\n", WTERMSIG(status));
             throw HTTPException(500);
         }
         recv_cgi_response();
@@ -701,7 +689,7 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
             std::cout << "infile in cgi open error" << std::endl;
             exit (1);
         }
-        dup2(fd, 0); // need checking
+        dup2(fd, 0);
         close (fd);
     }
     // Cookies
@@ -745,7 +733,6 @@ void    Request::recv_cgi_response()
     ssize_t bytes_read;
     std::string cgi_body;
     std::string cgi_returned_headers;
-    // this read has to be after waitpid
     int fd_out = create_file(".txt", this->_response_body_file);
     int premier_read = true;
     while (true)
@@ -776,17 +763,12 @@ void    Request::recv_cgi_response()
     close(this->_cgi_pipe[0]);
     close(fd_out);
     set_cgi_headers(cgi_returned_headers);
-    std::cout << "cgiiiiiiiiiiiiii response [" << this->_response_headers << "]\n";
     this->_which_body = FILE_BODY;
     throw HTTPException(677173);
 }
 
 void    Request::set_cgi_headers(std::string cgi_return)
 {
-    // print everything retured from the cgi
-    std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
-              << cgi_return
-              << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
     // status line
     size_t  found = cgi_return.find("HTTP/1.1");
     if (found != std::string::npos)
@@ -830,14 +812,12 @@ void    Request::set_cgi_headers(std::string cgi_return)
     else
         ss << get_file_len(this->_response_body_file);
     this->_response_headers += ss.str() + "\r\n";
-    // Date if needed
     if (true)
     {
         std::time_t currentTime;
         std::time(&currentTime);
         char buffer[100];
         std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&currentTime));
-        // to string
         std::string date_str(buffer);
         this->_response_headers += std::string("Date:") + " ";
         this->_response_headers += date_str + "\r\n";

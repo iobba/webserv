@@ -4,7 +4,6 @@
 #include "webserv.hpp"
 #include "server.hpp"
 
-
 class   Request
 {
     private:
@@ -27,8 +26,6 @@ class   Request
         int                                 _uploaded_fd;
         unsigned long int                   _body_recieved_len;
 
-
-
     public:
         int                                 _method;
         bool                                _reading_done;
@@ -36,7 +33,6 @@ class   Request
         Location                            _serving_location;    
         int                                 _status_code;
         std::string                         _returned_location;
-
         int                                 _which_body;
         std::string                         _response_body;
         std::string                         _response_headers;
@@ -57,7 +53,7 @@ class   Request
         std::vector<Server>                 _all_servers;
         std::string                         _body_name;
         std::string                         _cleaned_body_name;
-        // func
+        // functions
         Request();
         void                request_parser();
         void                request_analysis(char buffer[], int bytes_read);
@@ -95,9 +91,6 @@ class   Request
         void    set_cgi_headers(std::string cgi_return);
         void    upload_body();
         void    uploading();
-
-
-
 };
 
 #endif

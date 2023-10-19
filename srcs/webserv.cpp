@@ -41,17 +41,6 @@ std::string     get_file_extention(std::string file_name)
     return ("");
 }
 
-void clear_and_replace(std::string file_name, std::string new_content)
-{
-    // Open the file in output mode, which clears its contents
-    std::ofstream output_file(file_name.c_str());
-    if (!output_file.is_open())
-        throw HTTPException(500);
-    // Write the new content to the file
-    output_file << new_content;
-    output_file.close();
-}
-
 std::string get_content_type(std::string to_find, int i)
 {
     std::map<std::string, std::string> mime_types;
@@ -118,7 +107,6 @@ std::string get_content_type(std::string to_find, int i)
 long unsigned int     get_file_len(std::string file__name)
 {
     std::ifstream file(file__name.c_str());
-    std::cout << "file naaaame = [" << file__name << "]\n";
     if (!file.is_open())
         throw HTTPException(500);
     file.seekg(0, std::ios::end); // Move to the end of the file
@@ -216,7 +204,6 @@ int    create_file(std::string _ext_, std::string& naaaame)
     ss << randooooooomNum;
     std::string file_name = "/tmp/"; // path
     file_name += ss.str() + _ext_;
-    // std::cout << "heeeeeeeeeere = " << file_name << std::endl;
     int fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0777);
     if (fd == -1)
     {

@@ -8,18 +8,17 @@ class   Server
 {
     private:
         int                         _socket;
-        std::string                 _port; // default 80
+        std::string                 _port;
         struct sockaddr_in          _server_info;
         std::string                 _server_name;
-        std::string                 _host;// or you can take the entire addr if needed // default 127.0.0.1
+        std::string                 _host;// default 127.0.0.1
         std::string                 _root;
         unsigned long               _client_max_body_size; // default 3000000
-        std::string                 _index;// default index.html
+        std::string                 _index;
         bool                        _autoindex; // default off
-        std::map<int, std::string>  _error_pages;// should be some default ones
+        std::map<int, std::string>  _error_pages;
         std::map<int, std::string>  _error_messages;
         std::vector<Location>       _locations;
-        //  ... other info 
     
     public:
 
@@ -37,7 +36,6 @@ class   Server
         void        set_autoindex(std::string autoindex);
         void        add_error_page(std::string key, std::string value);
         void        add_location(std::string _path_, std::vector<std::string> lines);
-        // ...
 
         // getters
         bool                            _has_max_body_setten;
@@ -54,17 +52,6 @@ class   Server
         const std::string               get_error_page(int key) const;
         const std::string               get_error_messages(int key) const;
         const std::vector<Location>&    get_locations() const;
-        // i can get more getters for locations
-        // ...
-
 };
-
-
-
-
-
-
-
-
 
 #endif

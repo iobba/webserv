@@ -14,11 +14,10 @@ Location::Location()
     _return = "";
 }
 
-//////////// setters 
+//////////// setters //////////////
 
 void    Location::set_path(std::string path)
 {
-    // i don't know if it's neccessary to check if the path is valid or not...
     this->_path = path;
 }
 
@@ -116,11 +115,10 @@ void    Location::set_allowed_methods(std::vector<std::string> methods)
 
 void    Location::add_cgi_paths(std::string _ext_, std::string cgi_path_)
 {
-    // i can check the cgi path heeeeere if needed
     this->_cgi_path.insert(std::make_pair(_ext_, cgi_path_));
 }
 
-/////////// getters 
+/////////// getters //////////
 
 const std::string&  Location::get_path() const
 {

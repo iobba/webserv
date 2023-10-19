@@ -2,16 +2,6 @@
 
 ServManager::ServManager() : max_Fd(0) {}
 
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET)
-    {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
 int ServManager::launch_servers(std::vector<Server> _servers_)
 {
     try
@@ -26,7 +16,6 @@ int ServManager::launch_servers(std::vector<Server> _servers_)
     }
     nb_req = 0;
     print_esrvers_map();
-    std::cout << "Server is listening for connections on port 8008..." << std::endl;
     while (true)
     {
         fd_set tmp_ReadSet = this->read_set;
@@ -133,20 +122,17 @@ void    ServManager::configure_servers(std::vector<Server> servers_vec)
             it++;
             continue ;
         }
-        // Creating socket file descriptor
         if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
             throw SERVER_Exception("socket has failed : creating the socket for a server!!");
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = inet_addr(server.get_host().c_str());
         unsigned long port_ = std::strtoul(server.get_port().c_str(), NULL, 10);
         address.sin_port = htons(port_);
-        std::cout << server.get_host() << "|" << server.get_port() << "|" << std::endl;
         memset(address.sin_zero, '\0', sizeof address.sin_zero);
         if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
             throw SERVER_Exception("setsockopt has failed !!");
         if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
         {
-            std::cout << server.get_host() << "|" << server.get_port() << "|" << std::endl;
             close(server_fd);
             perror("bind");
             throw SERVER_Exception("failed to bind!!");
@@ -167,7 +153,6 @@ void    ServManager::setup_sets()
     FD_ZERO(&read_set);
     FD_ZERO(&write_set);
 
-    // add all server_sockets in the read_set
     std::map<int, Server>::iterator it = _servers_map.begin();
     while (it != _servers_map.end())
     {
@@ -191,9 +176,6 @@ int    ServManager::handle_connections(fd_set *tmp_readset)
                 perror("accept");
                 return(1) ;
             }
-
-            // we need to store more data about the client
-            std::cout << "New connection accepted." << std::endl;
             _new_client.set_socket(cl_socket);
             // set the server which is gonna handle this request
             _new_client._request._default_server = it->second;
@@ -232,7 +214,6 @@ int     ServManager::read_request(int client_socket, Client &_client_)
 {
     char buffer[1000000]; // 1024
     memset(buffer, 0, sizeof(buffer));
-    // std::cout << "recv fd = "  << client_socket << std::endl;
     ssize_t bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     if (bytes_read == -1 || bytes_read == 0)
     {
@@ -241,14 +222,9 @@ int     ServManager::read_request(int client_socket, Client &_client_)
     }
     else if (!is_favicon_ico(buffer)) // i should handle the favicon case
     {
-        std::cout << "Received request from client:\n" << bytes_read << std::endl;
-        std::cout << "-----------------------------------------------\n";
-        std::cout << "buffer == " << buffer << std::endl;
-        std::cout << "9999999999999999999999999999999999999999999\n";
         _client_._request.request_analysis(buffer, bytes_read);
         if (_client_._request._reading_done) // build the response ...
         {
-            std::cout << "\n\n##########################################\n\n";
             FD_CLR(client_socket, &read_set);
             FD_SET(client_socket, &write_set);
         }
@@ -270,7 +246,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
         int client_socket = it->first;
         if (FD_ISSET(client_socket, tmp_writeset))
         {
-            // std::cout << "response fd = " << client_socket << std::endl; 
             try 
             {
                 if (send_response(it->first, it->second))
@@ -318,7 +293,6 @@ int    ServManager::send_response(int client_socket, Client &_client_)
         if (_client_._request._waiting_done == false)
             return(0);
     }
-    // std::cout << "response fd = " << client_socket << std::endl;
     if (_client_._first_send) // send headers first
     {
         if (send_headers(client_socket, _client_))
@@ -391,8 +365,6 @@ int    ServManager::send_string(int client_socket, Client &_client_)
 
 int    ServManager::send_file(int client_socket, Client &_client_)
 {
-    //std::cout << "response headers :\n[ " << _client_._request._response_headers << "]\n";
-    //std::cout << "11111111111111111\n"; 
     int bufferSize = 1024;
     char buffer[bufferSize];
     int bytesRead = read(_client_._request._response_fd, buffer, bufferSize);
@@ -427,7 +399,6 @@ int     ServManager::close_connection(int to_close)
         FD_CLR(to_close, &read_set);
     if (FD_ISSET(to_close, &write_set))
         FD_CLR(to_close, &write_set);
-    std::cout << "\nclose = [ " << to_close << " ]\n" ;
     if (to_close + 1 == this->max_Fd)
         this->max_Fd--;
     close(to_close);
