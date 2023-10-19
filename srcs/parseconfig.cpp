@@ -198,7 +198,7 @@ void  ParseConfig::add_server(std::string server_scope)
     if (new_server._has_max_body_setten == false)
         new_server.set_client_max_body_size("3000000");
     if (new_server.get_index() == "")
-        new_server.set_index("/Users/iobba/Desktop/our_root/index.html");
+        new_server.set_index("/Users/oidboufk/Desktop/our_root/index.html");
     // at the end
     this->__servers.push_back(new_server);
 }

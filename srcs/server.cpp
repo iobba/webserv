@@ -19,21 +19,21 @@ Server::Server()
 void        Server::errors_initialisation()
 {
     // set error pages 
-    _error_pages[400] = "/Users/iobba/Desktop/webserv/error_pages/400.html";
-    _error_pages[403] = "/Users/iobba/Desktop/webserv/error_pages/403.html";
-    _error_pages[404] = "/Users/iobba/Desktop/webserv/error_pages/404.html";
-    _error_pages[405] = "/Users/iobba/Desktop/webserv/error_pages/405.html";
-    _error_pages[408] = "/Users/iobba/Desktop/webserv/error_pages/408.html";
-    _error_pages[409] = "/Users/iobba/Desktop/webserv/error_pages/409.html";
-    _error_pages[413] = "/Users/iobba/Desktop/webserv/error_pages/413.html";
-    _error_pages[414] = "/Users/iobba/Desktop/webserv/error_pages/414.html";
-    _error_pages[429] = "/Users/iobba/Desktop/webserv/error_pages/429.html";
-    _error_pages[431] = "/Users/iobba/Desktop/webserv/error_pages/431.html";
-    _error_pages[500] = "/Users/iobba/Desktop/webserv/error_pages/500.html";
-    _error_pages[501] = "/Users/iobba/Desktop/webserv/error_pages/501.html";
-    _error_pages[502] = "/Users/iobba/Desktop/webserv/error_pages/502.html";
-    _error_pages[505] = "/Users/iobba/Desktop/webserv/error_pages/505.html";
-    _error_pages[507] = "/Users/iobba/Desktop/webserv/error_pages/507.html";
+    _error_pages[400] = "/Users/oidboufk/Desktop/webserv/error_pages/400.html";
+    _error_pages[403] = "/Users/oidboufk/Desktop/webserv/error_pages/403.html";
+    _error_pages[404] = "/Users/oidboufk/Desktop/webserv/error_pages/404.html";
+    _error_pages[405] = "/Users/oidboufk/Desktop/webserv/error_pages/405.html";
+    _error_pages[408] = "/Users/oidboufk/Desktop/webserv/error_pages/408.html";
+    _error_pages[409] = "/Users/oidboufk/Desktop/webserv/error_pages/409.html";
+    _error_pages[413] = "/Users/oidboufk/Desktop/webserv/error_pages/413.html";
+    _error_pages[414] = "/Users/oidboufk/Desktop/webserv/error_pages/414.html";
+    _error_pages[429] = "/Users/oidboufk/Desktop/webserv/error_pages/429.html";
+    _error_pages[431] = "/Users/oidboufk/Desktop/webserv/error_pages/431.html";
+    _error_pages[500] = "/Users/oidboufk/Desktop/webserv/error_pages/500.html";
+    _error_pages[501] = "/Users/oidboufk/Desktop/webserv/error_pages/501.html";
+    _error_pages[502] = "/Users/oidboufk/Desktop/webserv/error_pages/502.html";
+    _error_pages[505] = "/Users/oidboufk/Desktop/webserv/error_pages/505.html";
+    _error_pages[507] = "/Users/oidboufk/Desktop/webserv/error_pages/507.html";
     // set error messages
     _error_messages[200] = "OK";
     _error_messages[201] = "Created";

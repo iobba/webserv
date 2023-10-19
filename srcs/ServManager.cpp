@@ -403,8 +403,13 @@ int     ServManager::close_connection(int to_close)
     if (to_close + 1 == this->max_Fd) {
         this->max_Fd--;
     }
+	if (this->_clients_map[to_close]._request._is_cgi
+		&& this->_clients_map[to_close]._request._child_id != -1)
+	{
+		kill(this->_clients_map[to_close]._request._child_id, SIGTERM);
+        waitpid(this->_clients_map[to_close]._request._child_id, NULL, 0);
+	}
     close(to_close);
-
     this->_clients_map.erase(to_close);
     return (EXIT_SUCCESS);
 }

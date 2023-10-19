@@ -384,32 +384,50 @@ void    Request::make_location_ready()
 int Request::get_matched_location()
 {
     unsigned long int more_specified = 0;
-    std::vector<Location>  locations = server.get_locations();        
+    std::vector<Location>  locations = server.get_locations();       
     unsigned long int i = 0;
     while (i < locations.size())
     {
-        size_t found_location_path = this->_path.find(locations[i].get_path());
+		std::string	loc_path =  locations[i].get_path();
+		bool is_fix = (loc_path[loc_path.size() - 1] == '/' && loc_path != "/");
+		if (is_fix)
+			loc_path = loc_path.substr(0, loc_path.size() - 1);
+
+        size_t found_location_path = this->_path.find(loc_path);
+		// std::cout << loc_path << "|" << this->_path << "|is_fix : " << is_fix << std::endl;
+		// /root/test/sssssss/
+		// /root/test/sssssssasdasdasd
+		// loc_path.size() < this->_path -> this->path[loc_path.size()]
         if (found_location_path == 0)
         {
-            if (this->_path.length() == locations[i].get_path().length())
+            if (this->_path.length() == loc_path.length())
             {
-                if (locations[i].get_path().length() > more_specified)
+                if (loc_path.length() > more_specified)
                 {
                     this->_serving_location = locations[i];
-                    more_specified = locations[i].get_path().length();
+                    more_specified = loc_path.length();
                 }
             }
-            else if (this->_path.length() > locations[i].get_path().length())
+            else if (this->_path.length() > loc_path.length())
             {
-                if (this->_path[locations[i].get_path().length()] == '/' 
-                    || locations[i].get_path() == "/")
+                if (this->_path[loc_path.length()] == '/' 
+                    || loc_path == "/"
+					|| (!is_fix && this->_path[loc_path.length()] != '/'))
                 {
-                    if (locations[i].get_path().length() > more_specified)
+                    if (loc_path.length() > more_specified)
                     {
                         this->_serving_location = locations[i];
-                        more_specified = locations[i].get_path().length();
+                        more_specified = loc_path.length();
                     }
-                }
+					if (!is_fix && loc_path != "/") {
+						size_t fnd = this->_path.find("/", loc_path.size());
+						if (fnd != std::string::npos)
+							this->_path = this->_path.substr(0, loc_path.size()) + this->_path.substr(fnd);
+						else
+							this->_path = this->_path.substr(0, loc_path.size());
+					}
+                }else
+					return (0);
             }
         }
         i++;
@@ -644,6 +662,7 @@ void   Request::waiting_child()
         kill(this->_child_id, SIGTERM);
         waitpid(this->_child_id, NULL, 0);
         _waiting_done = true;
+		this->_child_id = -1;
         throw HTTPException(408);
     }
     result = waitpid(this->_child_id, &status, WNOHANG);
