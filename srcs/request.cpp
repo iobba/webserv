@@ -432,7 +432,6 @@ int Request::get_matched_location()
         }
         i++;
     }
-    std::cout << "location root : " << this->_serving_location.get_root() << std::endl;
     return (more_specified);
 }
 
@@ -551,10 +550,13 @@ void    Request::delete_file()
 
 int    Request::find_requested_file()
 {
+	std::string only_path;
     std::string rooooooot = this->_serving_location.get_root();
     if (rooooooot[rooooooot.length() - 1] != '/')
         rooooooot.push_back('/');
-    std::string only_path = this->_path.substr(this->_serving_location.get_path().length());
+	if (this->_serving_location.get_path().size() < this->_path.size()) {
+    	only_path = this->_path.substr(this->_serving_location.get_path().length());
+	}
     if (only_path == "")
         this->_response_body_file = rooooooot;
     else 
@@ -627,27 +629,25 @@ void    Request::set_response_headers(std::string _code_str)
 
 void    Request::cgi_process(std::map<std::string,std::string>::iterator ext_found)
 {
-    if (pipe(this->_cgi_pipe) == -1)
-    {
-        perror("pipe");
-        throw HTTPException(500);
-    }
+	std::string str = this->_response_body_file;
+	int fd_out = create_file(".txt", this->_response_body_file);
     this->_child_id = fork();
     if (this->_child_id == -1)
     {
+		close(fd_out);
         perror("fork");
         throw HTTPException(500);
     }
     else if (this->_child_id == 0) // child
     {
-        close(this->_cgi_pipe[0]);
-        dup2(this->_cgi_pipe[1], 1);
-        close(this->_cgi_pipe[1]);
+        dup2(fd_out, 1);
+		close(fd_out);
+		this->_response_body_file = str;
         execute_cgi(ext_found);
     }
-    this->_child_start = std::time(NULL);
     // parent
-    close(this->_cgi_pipe[1]);
+	close(fd_out);
+    this->_child_start = std::time(NULL);
     _waiting_done = false;
 }
 
@@ -751,14 +751,19 @@ void    Request::execute_cgi(std::map<std::string,std::string>::iterator ext_fou
 void    Request::recv_cgi_response()
 {
     char buffer[1024];
+	int fd_out = -1;
     ssize_t bytes_read;
     std::string cgi_body;
     std::string cgi_returned_headers;
-    int fd_out = create_file(".txt", this->_response_body_file);
+
+    int fd_in = open(this->_response_body_file.c_str(), O_RDONLY, 0666);
+	if (fd_in < 0)
+		throw HTTPException(500);
     int premier_read = true;
     while (true)
     {
-        bytes_read = read(this->_cgi_pipe[0], buffer, sizeof(buffer));
+        bytes_read = read(fd_in, buffer, sizeof(buffer));
+
         if (bytes_read < 0)
         {
             perror("read from pipe");
@@ -769,7 +774,8 @@ void    Request::recv_cgi_response()
         std::string cgi_return(buffer, bytes_read);
         if (premier_read)
         {
-            premier_read = false;
+			fd_out = create_file(".txt", this->_response_body_file);
+			premier_read = false;
             size_t body_start = cgi_return.find("\r\n\r\n");
             if (body_start == std::string::npos)
                 cgi_returned_headers = "";
@@ -779,10 +785,11 @@ void    Request::recv_cgi_response()
                 cgi_return = cgi_return.substr(body_start + 4);
             }
         }
-        write(fd_out, cgi_return.c_str(), cgi_return.length());
+		if (fd_out != -1)
+	        write(fd_out, cgi_return.c_str(), cgi_return.length());
     }
-    close(this->_cgi_pipe[0]);
     close(fd_out);
+    close(fd_in);
     set_cgi_headers(cgi_returned_headers);
     this->_which_body = FILE_BODY;
     throw HTTPException(677173);

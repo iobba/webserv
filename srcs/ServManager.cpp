@@ -171,7 +171,6 @@ int    ServManager::handle_connections(fd_set *tmp_readset)
             // new client object
             Client      _new_client;
             int cl_socket = accept(it->first, NULL, NULL);
-            std::cout << "Fd : " << cl_socket << std::endl;
             if (cl_socket == -1)
             {
                 perror("accept");
@@ -222,18 +221,9 @@ int     ServManager::read_request(int client_socket, Client &_client_)
         perror("recv");
         return (1);
     }
-    else if (!is_favicon_ico(buffer))
+    _client_._request.request_analysis(buffer, bytes_read);
+    if (_client_._request._reading_done)
     {
-        _client_._request.request_analysis(buffer, bytes_read);
-        if (_client_._request._reading_done)
-        {
-            FD_CLR(client_socket, &read_set);
-            FD_SET(client_socket, &write_set);
-        }
-    }
-    else
-    {
-        _client_._is_favicon = true;
         FD_CLR(client_socket, &read_set);
         FD_SET(client_socket, &write_set);
     }
@@ -283,11 +273,6 @@ int     ServManager::handle_response(fd_set *tmp_writeset)
 int    ServManager::send_response(int client_socket, Client &_client_)
 {
     bool sending_done = false;
-    if (_client_._is_favicon)
-    {
-        _client_._is_favicon = false;
-        throw HTTPException(404);
-    }
     if (_client_._request._is_cgi)
     {
         if (_client_._request._waiting_done == false)

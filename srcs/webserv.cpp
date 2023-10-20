@@ -124,7 +124,7 @@ int     which_type(std::string  pa_th)
         if (S_ISREG(path_info.st_mode))
             return (0);
         else if(S_ISDIR(path_info.st_mode))
-            return (1);  
+            return (1);
         else
             return (2);
     }
@@ -204,7 +204,7 @@ int    create_file(std::string _ext_, std::string& naaaame)
     ss << randooooooomNum;
     std::string file_name = "/tmp/"; // path
     file_name += ss.str() + _ext_;
-    int fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0777);
+    int fd = open(file_name.c_str(), O_CREAT | O_RDWR, 0777);
     if (fd == -1)
     {
         std::cerr << "Failed to the uploaded file." << std::endl;
