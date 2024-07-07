@@ -11,7 +11,7 @@ The Webserv project involves creating a HTTP server in C++ 98, adhering to the H
   - `GET`
   - `POST`
   - `DELETE`
-  - `...`
+  - `...` 
 
 **Key Concepts**
 
