@@ -28,31 +28,23 @@ The Webserv project involves creating a HTTP server in C++ 98, adhering to the H
     - Using techniques like `poll()`, `select()`(the one that i used), or `epoll()` for non-blocking I/O operations ensures that the server remains responsive to multiple client requests simultaneously.
 
 ## Some Usefull Resources
-  - `Server setup`
+  - `Server setup and an overview on the general Topics`
     - https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-build-a-simple-http-server-from-scratch-d1ef8945e4fa
     - https://ncona.com/2019/04/building-a-simple-server-with-cpp/
-    - https://www.tutorialspoint.com/cplusplus/cpp_web_programming.htm
+    - https://www.tutorialspoint.com/cplusplus/cpp_web_programming.html
+    - https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf
+    - https://w3.cs.jmu.edu/kirkpams/OpenCSF/Books/csf/html/index.html [Only chapter 4 and 5]
 
   - `HTTP 1.1 (standard to follow)`
     - https://www.rfc-editor.org/rfc/rfc2616.html
     - https://www.rfc-editor.org/rfc/rfc7230.html
     - https://www.rfc-editor.org/rfc/rfc7231.html
     - https://www.rfc-editor.org/rfc/rfc7232.html
-  
-  - `Other HTTP (legacy / future)`
-    - https://www.rfc-editor.org/rfc/rfc1945.html
-    - https://www.rfc-editor.org/rfc/rfc7540.html
-    - https://www.rfc-editor.org/rfc/rfc7541.html
-    - https://www.rfc-editor.org/rfc/rfc959.html
 
   - `HTTP Header Syntax`
     - https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol#Request_methods
     - https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
     - https://stackoverflow.com/questions/5757290/http-header-line-break-style
-
-  - `Select and non-blocking`
-    - https://www.lowtek.com/sockets/select.html
-    - https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_72/rzab6/xnonblock.htm
     
   - `CGI`
     - http://www.mnuwer.dbasedeveloper.co.uk/dlearn/web/session01.htm
